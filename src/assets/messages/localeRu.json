@@ -78,10 +78,11 @@
     "service.system.pumping.title": "Прокачка",
     "service.system.pumping.text_toggle": "Заполнение системы",
     "service.system.led.title": "Яркость светодиода",
-
     "service.system.onoff.title": "Автовыключение",
     "service.system.onoff.text_toggle1": "Начать обучение",
     "service.system.onoff.text_toggle2": "Идет обучение...",
+    "service.system.fakegps.title": "Спуффинг GPS",
+    "service.system.fakegps.text_toggle": "Анализ GPS сигнала",
 
     "service.update.fw.title1": "Загрузка файлов ПО блока",
     "service.update.fw.title2": "Обновление ПО блока",

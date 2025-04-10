@@ -129,7 +129,8 @@ const store = createStore({
       ap: {ssid: "Cosmoiler-NNNN", psw: "", pwr: true},
       sta: {ssid: "", psw: ""},
       bright: 255,
-      gps: false
+      gps: false,
+      fake: false
     },
    /*  pn: { pn: null, ssid: "Cosmoiler_", psw: null }, */
     ver: {
@@ -514,6 +515,13 @@ const store = createStore({
           f7.alert('Нет связи с блоком управеления. Команда не выполнена.','Cosmoiler')
         })
     },
+
+    fakeGPS({state}, data) {
+      f7.request.post('http://' + uri() + '/settings/fakegps?state='+(data>>0))
+      .catch(() => {
+        f7.alert('Нет связи с блоком управеления. Команда не выполнена.','Cosmoiler')
+      })
+    }
   },
 })
 

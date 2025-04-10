@@ -77,10 +77,11 @@
 
     "service.system.pumping.title": "Priming",
     "service.system.pumping.text_toggle": "Filling in the system",
-
     "service.system.onoff.title": "Auto Power on/off",
     "service.system.onoff.text_toggle1": "Start learning",
     "service.system.onoff.text_toggle2": "Training is underway...",
+    "service.system.fakegps.title": "Spoofing GPS",
+    "service.system.fakegps.text_toggle": "GPS signal Analysis",
 
     "service.update.fw.title1": "Download firmware",
     "service.update.fw.title2": "Update firmware",

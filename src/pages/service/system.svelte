@@ -21,7 +21,16 @@
         <Ranges {...rangeValue} />
         {/each}
 
+    <!-- Управление обучением включения выключения -->
         <BlockTitle ><span>{$t('service.system.onoff.title')}</span></BlockTitle>
+        <Block mediumInset>
+          <p><i>
+            Осуществляет подбор параметров для функции автоматического включения и выключения смазчика.<br>
+            </i>
+          </p>
+          <p><i style="font-weight: 600">ВНИМАНИЕ!</i> <i>Для правильной работы функции при обучении строго
+            следуйте инструкции.</i></p>
+        </Block>
         <List >
             <ListItem style="background-color: var(--f7-theme-color-bg-tint-color)">
               {#if !AItraining}
@@ -32,6 +41,23 @@
                 <ListItemCell class="width-auto flex-shrink-4"><Toggle bind:checked={AItraining} bind:disabled={disabled}  /></ListItemCell>
             </ListItem>
         </List>
+
+        <!-- Управление режимом определения Fake GPS -->
+        <BlockTitle ><span>{$t('service.system.fakegps.title')}</span></BlockTitle>
+        <Block mediumInset>
+          <p><i>
+            Включает возможность обнаружения спуффинга сигнала GPS и интеллектуального переключения между
+            режимами работы "Одометр" и "Таймер".<br>
+            </i>
+          </p>
+          <p><i style="font-weight: 600">ПРЕДУПРЕЖДЕНИЕ!</i> <i>Функция экспериментальная.</i></p>
+        </Block>
+        <List >
+            <ListItem style="background-color: var(--f7-theme-color-bg-tint-color)">
+                <ListItemCell class="width-auto flex-shrink-0 list-input__label list-input__label-text_color">{$t('service.system.fakegps.text_toggle')}</ListItemCell>
+                <ListItemCell class="width-auto flex-shrink-4"><Toggle bind:checked={fakegps}  /></ListItemCell>
+            </ListItem>
+        </List>
     {/if}
 
 </Page>
@@ -40,7 +66,7 @@
     import {
       Page,
      // Button,
-     // Block,
+      Block,
       List,
       ListItem,
       ListItemCell,
@@ -64,6 +90,7 @@
     let ctrlpump = false
     let AItraining = false
     let disabled = false
+    let fakegps = tmpSystem.fake;
 
     let Tdpms = 0
     $: {
@@ -74,7 +101,13 @@
 
 
     $: if (!connected) document.location.reload()
-    $: store.dispatch('ctrlPump', [ctrlpump, 0, {dpms: Tdpms, dpdp: 1}])
+    $: {
+      if (ctrlpump) store.dispatch('modeWork', store.state.OILER_PUMPING)
+      else store.dispatch('modeWork', store.state.OILER_AUTO)
+      store.dispatch('ctrlPump', [ctrlpump, 0, {dpms: Tdpms, dpdp: 1}])
+    }
+
+    $: store.dispatch('fakeGPS', fakegps)
 
     $: rangeValues = [
       [{
@@ -100,7 +133,7 @@
 
     function pageBeforeIn() {
       /* включить режим настройки вязкости */
-      store.dispatch('modeWork', store.state.OILER_PUMPING)
+      //store.dispatch('modeWork', store.state.OILER_PUMPING)
     }
 
     function pageAfteOut() {
