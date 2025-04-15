@@ -90,7 +90,8 @@
         }
       return {
           icon: "icon-gps",
-          value: telemetry.params[nameParams.GPS].sat
+          value: telemetry.params[nameParams.GPS].sat,
+          alarm: telemetry.params[nameParams.GPS].fake
       }
     }
     return {
@@ -201,7 +202,7 @@ $:  dataCardTele = [
       icons: [
         {icon: iconsPreset[indexPreset(telemetry)], value: timer.presets[indexPreset(telemetry)].time + $t("all.seconds")},
         {icon: "icon-pump", value: telemetry.params[nameParams.PUMP].v},
-        (gnssPresent.gps) ? {icon: "icon-gps", value: telemetry.params[nameParams.GPS].sat} : null,
+        (gnssPresent.gps) ? {icon: "icon-gps", value: telemetry.params[nameParams.GPS].sat, alarm: telemetry.params[nameParams.GPS].fake} : null,
         {
           icon: "icon-accum",
           value: voltage(telemetry.params[nameParams.VOLTAGE]) + $t("all.voltage"),

@@ -25,11 +25,17 @@
         <BlockTitle ><span>{$t('service.system.onoff.title')}</span></BlockTitle>
         <Block mediumInset>
           <p><i>
-            Осуществляет подбор параметров для функции автоматического включения и выключения смазчика.<br>
+            Осуществляет подбор параметров для функции автоматического включения и выключения смазчика
+            при прямом подключении на аккумулятор, не используя сигнал ACC.<br>
             </i>
           </p>
           <p><i style="font-weight: 600">ВНИМАНИЕ!</i> <i>Для правильной работы функции при обучении строго
-            следуйте инструкции.</i></p>
+            следуйте инструкции:</i></p>
+          <p>1. Запустите двигатель.</p>
+          <p>2. Ожидайте примерно 30 секунд.</p>
+          <p>3. Нажмите переключатель "Начать обучение". </p>
+          <p>4. Как только начнет мигать индикатор на кнопке, выключите зажигание (остановите двигатель).</p>
+          <p>5. Процесс обучения автосмазчика продолжается примерно 20 секунд, в течение которого индикатор постоянно мигает и затем блок управления перезагружается.</p>
         </Block>
         <List >
             <ListItem style="background-color: var(--f7-theme-color-bg-tint-color)">
@@ -50,12 +56,16 @@
             режимами работы "Одометр" и "Таймер".<br>
             </i>
           </p>
+          <p><i>
+            При обнаружении спуффинга или глушения сигнала GPS иконка  <Icon icon="icon-gps" style='color: red;'/> во вкладке "Телеметрия" будет отображаться красным цветом.
+          </i>
+          </p>
           <p><i style="font-weight: 600">ПРЕДУПРЕЖДЕНИЕ!</i> <i>Функция экспериментальная.</i></p>
         </Block>
         <List >
             <ListItem style="background-color: var(--f7-theme-color-bg-tint-color)">
                 <ListItemCell class="width-auto flex-shrink-0 list-input__label list-input__label-text_color">{$t('service.system.fakegps.text_toggle')}</ListItemCell>
-                <ListItemCell class="width-auto flex-shrink-4"><Toggle bind:checked={fakegps}  /></ListItemCell>
+                <ListItemCell class="width-auto flex-shrink-4"><Toggle bind:checked={tmpSystem.fake}  /></ListItemCell>
             </ListItem>
         </List>
     {/if}
@@ -73,6 +83,7 @@
       Navbar,
       BlockTitle,
       Toggle,
+      Icon,
       useStore
     } from 'framework7-svelte';
     import {t} from '../../services/i18n.js';
@@ -90,7 +101,7 @@
     let ctrlpump = false
     let AItraining = false
     let disabled = false
-    let fakegps = tmpSystem.fake;
+    //let fakegps = false;
 
     let Tdpms = 0
     $: {
@@ -107,7 +118,7 @@
       store.dispatch('ctrlPump', [ctrlpump, 0, {dpms: Tdpms, dpdp: 1}])
     }
 
-    $: store.dispatch('fakeGPS', fakegps)
+    $: store.dispatch('fakeGPS', tmpSystem.fake)
 
     $: rangeValues = [
       [{

@@ -161,6 +161,7 @@ const store = createStore({
         },
         { // 4 - gps
           fix: false,   // 3D Fix GPS
+          fake: false,  // Признак спуффинга GPS сигнала
           sat: 0,       // Количество спутников
           lat: 0.000000,// Широта
           lon: 0.000000 // Долгота
