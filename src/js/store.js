@@ -129,7 +129,7 @@ const store = createStore({
       ap: {ssid: "Cosmoiler-NNNN", psw: "", pwr: true},
       sta: {ssid: "", psw: ""},
       bright: 255,
-      gps: false,
+      gps: true,
       fake: false
     },
    /*  pn: { pn: null, ssid: "Cosmoiler_", psw: null }, */
@@ -233,7 +233,7 @@ const store = createStore({
           f7.request.get('http://' + uri() + '/settings/pump').then((response) => { state.pump = JSON.parse(response.data) });
           f7.request.get('http://' + uri() + '/settings/system').then((response) => {
             state.system = JSON.parse(response.data)
-            if (!state.system.gps)
+            if (ToBoolean(state.system.gps) == false)
               state.odometer.sensor.gnss = false
           });
           f7.request.get('http://' + uri() + '/settings/ver')

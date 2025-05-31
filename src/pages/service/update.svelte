@@ -7,12 +7,6 @@
   {#if !f_connected}
     <BlockTitle class={`block-title-noconnection__text`} >{$t('home.noconnect')}</BlockTitle>
   {/if}
-  <BlockTitle ><span>{$t('service.update.fw.title1')}</span></BlockTitle>
-  <Block strong style="background-color: var(--f7-theme-color-bg-tint-color)">
-      <Col>
-        <Button outline lager on:click = {downloadFW}>{$t('button.download')}</Button>
-      </Col>
-  </Block>
   <BlockTitle ><span>{$t('service.update.fw.title2')}</span></BlockTitle>
   <Block strong style="background-color: var(--f7-theme-color-bg-tint-color)">
       <Col>
