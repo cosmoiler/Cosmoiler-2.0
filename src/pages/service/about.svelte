@@ -3,19 +3,19 @@
   class={`page`}
   pageContent={true}>
 
-  <Navbar title={$t('О приложении')} backLink="Back" />
+  <Navbar title={$t('service.about')} backLink="Back" />
 
   <Block strong class={`settings-main__list-item`}>
     <Block>
-      <p align="center"><b>Приложение-клиент для задания параметров работы автоматического смазчика цепи "Cosmoiler".</b></p>
+      <p align="center"><b>{$t('service.about.block1')}</b></p>
     </Block>
 
     <Block>
-      <p>Для работы приложения-клиента и блока управления смазчика доступ в Интернет не требуется (кроме действий при обновлении прошивки блока управления).</p>
+      <p>{$t('service.about.block2')}</p>
     </Block>
 
     <Block>
-      <p>Более подробная информация доступна по адресу: <Link href="https://vk.com/cosmoiler" external>Cosmoiler</Link></p>
+      <p>{$t('service.about.block3')}<Link href="https://vk.com/cosmoiler" external>Cosmoiler</Link></p>
     </Block>
   </Block>
 

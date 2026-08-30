@@ -75,7 +75,7 @@ const store = createStore({
     telemetryInterval: 0,
     connect: false,
    // trigg_connect: false; // триггер изменения статуса подключения
-    locale: window.navigator.userLanguage || window.navigator.language,
+    locale: (navigator.userLanguage || navigator.language || navigator.systemLanguage),
     /**
      * ! Флаг изменения настроек
      * status {false, true}: true - настройки были изменены, false - не было измененений

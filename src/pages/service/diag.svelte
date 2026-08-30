@@ -28,6 +28,13 @@
     </div>
     <AccordionContent>
       <Block>
+        <p><b>Отсутствует Wi-Fi блока.</b></p>
+        <p> - выключите и включите зажигание. В течение 60 сек подключитесь к блоку;</p>
+        <p> - возможно включение Wi-Fi с помощью кнопки управления без выключения зажигания:
+          сделайте 4 или более коротких нажатия на кнопку.</p>
+      </Block>
+      {#if false}
+      <Block>
         <p><b>1. Плавное погасание и зажигание светодиода или название точки доступа блока "Cosmoiler_NA" или только цифры</b></p>
         <p> - выполните пп. 1-5 раздела "Обратная связь";</p>
         <p> - настройте в смартфоне точку доступа с именем <b>сosmoiler</b> и паролем <b>12345678</b>;</p>
@@ -50,8 +57,10 @@
         <p> - возможно включение Wi-Fi с помощью кнопки управления без выключения зажигания:
           сделайте 4 или более коротких нажатия на кнопку.</p>
       </Block>
+      {/if}
     </AccordionContent>
   </ListItem>
+  {#if false}
   <ListItem accordionItem class={`settings-main__list-item`}>
     <div slot='title' class={`list-input__label list-input__label-text_color`}>
       <span>{$t('service.diag.acord.title2')}</span>
@@ -67,6 +76,7 @@
       </Block>
     </AccordionContent>
   </ListItem>
+  {/if}
   {#if false}
   <ListItem accordionItem class={`settings-main__list-item`}>
     <div slot='title' class={`list-input__label list-input__label-text_color`}>

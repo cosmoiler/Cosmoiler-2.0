@@ -41,6 +41,16 @@
     "settings.pump.on": "Вкл: {p}",
     "settings.pump.off": "Пауза: {p}",
     "settings.pump.description": "Настройка насоса под вязкость залитого масла",
+    "settings.pump.type": "Тип насоса",
+    "settings.pump.type.std": "Штатный насос",
+    "settings.pump.type.nonstd": "Дополнительный насос",
+    "settings.pump.std.viscosity": "Вязкость масла",
+    "settings.pump.std.viscosity.block.p1": "Выбор вязкости используется только для упрощения настройки выдачи насосом капли масла.",
+    "settings.pump.std.viscosity.liquid": "Жидкое (АТФ, моторное)",
+    "settings.pump.std.viscosity.thick": "Густое (трансмиссионное)",
+    "settings.pump.std.volume": "Объем масла",
+    "settings.pump.std.volume.block.p1": "Оптимальная настройка заключается в задании такого объема масла, чтобы при срабатывании насоса из форсунки вытекала одна капля.",
+    "settings.pump.nonstd.block.p1": "Задайте временные параметры работы для конкретного типа насоса (клапана). Параметры будут определять объем выдаваемого насосом количества масла.",
     "settings.presets.title": "Предустановки",
     "settings.presets.city": "Город",
     "settings.presets.way": "Трасса",
@@ -69,6 +79,10 @@
     "service.title": "Сервис",
     "service.wifi.title": "Точка доступа Wi-Fi",
     "service.wifi.ap.title": "Точка доступа блока",
+    "service.wifi.ap.psw.title": "Пароль",
+    "service.wifi.ap.alwson.title": "WiFi всегда включен:",
+    "service.wifi.ap.ssid.plchldr": "Введите имя",
+    "service.wifi.ap.psw.plchldr": "Введите пароль",
     "service.wifi.sta.title": "Точка доступа для обновления",
 
     "service.system.title": "Система",
@@ -81,6 +95,13 @@
     "service.system.onoff.title": "Автовыключение",
     "service.system.onoff.text_toggle1": "Начать обучение",
     "service.system.onoff.text_toggle2": "Идет обучение...",
+    "service.system.onoff.block.p1": "Осуществляет подбор параметров для функции автоматического включения и выключения смазчика при прямом подключении на аккумулятор, не используя сигнал ACC.",
+    "service.system.onoff.block.p2": "Для правильной работы функции при обучении строго следуйте инструкции:",
+    "service.system.onoff.block.p3": "1. Запустите двигатель.",
+    "service.system.onoff.block.p4": "2. Ожидайте примерно 30 секунд.",
+    "service.system.onoff.block.p5": "3. Нажмите переключатель \"Начать обучение\".",
+    "service.system.onoff.block.p6": "4. Как только начнет мигать индикатор на кнопке, выключите зажигание (остановите двигатель).",
+    "service.system.onoff.block.p7": "5. Процесс обучения автосмазчика продолжается примерно 20 секунд, в течение которого индикатор постоянно мигает и затем блок управления перезагружается.",
     "service.system.fakegps.title": "Спуффинг GPS",
     "service.system.fakegps.text_toggle": "Анализ GPS сигнала",
 
@@ -93,6 +114,7 @@
     "service.update.cnfg.button.title": "Установить",
     "service.update.cnfg.confirm.text": "Все текущие настройки будут заменены заводскими. Вы уверены?",
     "service.update.cnfg.confirm.error": "Ошибка сброса настроек. Повторите попытку.",
+    "service.update.file.title": "Выберите файл...",
 
     "service.diag.title": "Диагностика",
     "service.diag.acord.title1": "Возможные неисправности",
@@ -147,5 +169,18 @@
     "pumping.attention.content3": "3. Конец шланга, идущий к бачку, поместить в емкость с маслом.",
     "pumping.attention.content4": "4. Включить пополнение.",
 
-    "attention.title": "Внимание!"
+    "attention.title": "Внимание!",
+
+    "service.about": "О приложении",
+    "service.about.block1": "Приложение-клиент для задания параметров работы автоматического смазчика цепи \"Cosmoiler\".",
+    "service.about.block2": "Для работы приложения-клиента и блока управления смазчика доступ в Интернет не требуется.",
+    "service.about.block3": "Более подробная информация доступна по адресу: ",
+
+
+
+
+
+
+    "settings.manual.oilvolume": "Объем масла"
+
 }

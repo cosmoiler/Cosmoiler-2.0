@@ -8,14 +8,14 @@
 
 <!--     <BlockTitle>Настройка насоса под вязкость залитого масла</BlockTitle> -->
     <BlockTitle class='block-title-text_settings'>
-        {$t('Тип насоса')}
+        {$t('settings.pump.type')}
     </BlockTitle>
     <List>
         <ListItem
           radio
           name="std"
           value="std"
-          title={$t('Штатный насос')}
+          title={$t('settings.pump.type.std')}
           checked={fStd}
           on:change={() => {
             tmpPump.usr = false
@@ -29,7 +29,7 @@
           radio
           name="user"
           value="usr"
-          title={$t('Дополнительный насос')}
+          title={$t('settings.pump.type.nonstd')}
           checked={fUsr}
           on:change={() => {
             tmpPump.usr = true
@@ -44,11 +44,11 @@
 
     {#if !tmpPump.usr}
     <BlockTitle class='block-title-text_settings'>
-      {$t('Вязкость масла')}
+      {$t('settings.pump.std.viscosity')}
     </BlockTitle>
     <Block mediumInset>
       <p><i>
-        Выбор вязкости используется только для упрощения настройки выдачи насосом капли масла.
+        {$t('settings.pump.std.viscosity.block.p1')}
         </i>
       </p>
     </Block>
@@ -57,7 +57,7 @@
             radio
             name="atf"
             value="atf"
-            title={$t('Жидкое (АТФ, моторное)')}
+            title={$t('settings.pump.std.viscosity.liquid')}
             checked={is_atf}
             on:change={() => {
               Oil = typesOil.ATF
@@ -70,7 +70,7 @@
             radio
             name="tad17"
             value="tad17"
-            title={$t('Густое (трансмиссионное)')}
+            title={$t('settings.pump.std.viscosity.thick')}
             checked={is_tad17}
             on:change={() => {
               Oil = typesOil.TAD
@@ -81,12 +81,11 @@
           </ListItem>
       </List>
       <BlockTitle class='block-title-text_settings'>
-        {$t('Объем масла')}
+        {$t('settings.pump.std.volume')}
       </BlockTitle>
       <Block mediumInset>
         <i>
-          Оптимальная настройка заключается в
-          задании такого объема масла, чтобы при срабатывании насоса из форсунки вытекала одна капля.
+          {$t('settings.pump.std.volume.block.p1')}
           </i>
       </Block>
       {#if is_atf}
@@ -97,8 +96,7 @@
     {:else}
     <Block>
       <p>
-        Задайте временные параметры работы для конкретного типа насоса (клапана).
-        Параметры будут определять объем выдаваемого насосом количества масла.
+        {$t('settings.pump.nonstd.block.p1')}
       </p>
     </Block>
       {#each rangeValues[1] as rangeValue}
@@ -134,11 +132,6 @@
     let Oil// = typesOil.ATF
     //let T = pump.period // используется для режима настройки - пауза между каплями (фиксированное)
     let T = 0
-    $: {
-      if (ver.hw[0] == 'B') T = 5000 // для версии [0HW: Bx] период, чтобы dpms был от 500 мс (1%) до 5000 мс (90%)
-      if (ver.hw[0] == 'A') T = 500 // для версии [0HW: Ax] период меньше, чтобы dpms был от 5 мс (1%) до 450 мс (90%)
-      if (ver.hw[0] == 'C') T = 1000 // для версии [0HW: Cx] период меньше, чтобы dpms был от 10 мс (1%) до 900 мс (90%)
-    }
     let tmpPump = pump
     let fToggle = false
     let fOnOffPump = false
@@ -154,8 +147,17 @@
     $: is_atf = (Oil == typesOil.ATF)? true : false
     $: is_tad17 = (Oil == typesOil.TAD)? true : false
 
-    $: if (is_atf) T = 500
-    $: if (is_tad17) T = 2000
+    $: {
+      if (ver.hw[0] == 'B') T = 5000 // перистальтический насос
+      if (ver.hw[0] == 'A') T = 500 //  самодельный насос (устаревшее)
+      if (ver.hw[0] == 'C') { // мембранный насос с клапаном
+        T = 1000
+        if (is_atf) T = 500
+        if (is_tad17) T = 2000
+      }
+    }
+    //$: if ((is_atf) && (ver.hw[0] == 'C')) T = T/2
+    //$: if ((is_tad17) && (ver.hw[0] == 'C')) T = T*2
 
     //$: if ()
     $: rangeValues = [

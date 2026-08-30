@@ -1,5 +1,8 @@
 # Cosmoiler
 
+TODO:
+1. Реализовать ограничение работы насоса не более 1 мин 30 сек.
+
 ## Framework7 CLI Options
 
 Framework7 app created with following options:

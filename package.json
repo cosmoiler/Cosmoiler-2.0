@@ -12,7 +12,7 @@
     "dev": "cross-env NODE_ENV=development webpack serve --config ./build/webpack.config.js",
     "buildcpx": "cross-env NODE_ENV=production node ./build/build.js && npm run postinstall",
     "build": "cross-env NODE_ENV=production node ./build/build.js",
-    "postinstall": "cpx ./www/*.{json,html,gz,woff,png} ./%USERPROFILE%/Documents/Prog/Firmware/ESP32/workspace/cosmoiler-idf/data/"
+    "postinstall": "cpx ./www/*.{json,html,gz,woff,png} ./D/Cosmoiler/Prog/Firmware/ESP32/workspace/cosmoiler-idf/data/"
   },
   "browserslist": [
     "Android >= 7",

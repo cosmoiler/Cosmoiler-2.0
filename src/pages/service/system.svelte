@@ -8,6 +8,7 @@
     <Navbar title={$t('service.system.title')} backLink="Back" />
 
     {#if connected}
+    <!-- Управление прокачкой системы -->
         <BlockTitle ><span>{$t('service.system.pumping.title')}</span></BlockTitle>
         <List >
             <ListItem style="background-color: var(--f7-theme-color-bg-tint-color)">
@@ -24,18 +25,15 @@
     <!-- Управление обучением включения выключения -->
         <BlockTitle ><span>{$t('service.system.onoff.title')}</span></BlockTitle>
         <Block mediumInset>
-          <p><i>
-            Осуществляет подбор параметров для функции автоматического включения и выключения смазчика
-            при прямом подключении на аккумулятор, не используя сигнал ACC.<br>
-            </i>
+          <p><i>{$t('service.system.onoff.block.p1')}<br></i></p>
+          <p><i style="font-weight: 600">{$t('attention.title').toUpperCase()}</i>
+            <i>{$t('service.system.onoff.block.p2')}</i>
           </p>
-          <p><i style="font-weight: 600">ВНИМАНИЕ!</i> <i>Для правильной работы функции при обучении строго
-            следуйте инструкции:</i></p>
-          <p>1. Запустите двигатель.</p>
-          <p>2. Ожидайте примерно 30 секунд.</p>
-          <p>3. Нажмите переключатель "Начать обучение". </p>
-          <p>4. Как только начнет мигать индикатор на кнопке, выключите зажигание (остановите двигатель).</p>
-          <p>5. Процесс обучения автосмазчика продолжается примерно 20 секунд, в течение которого индикатор постоянно мигает и затем блок управления перезагружается.</p>
+          <p>{$t('service.system.onoff.block.p3')}</p>
+          <p>{$t('service.system.onoff.block.p4')}</p>
+          <p>{$t('service.system.onoff.block.p5')}</p>
+          <p>{$t('service.system.onoff.block.p6')}</p>
+          <p>{$t('service.system.onoff.block.p7')}</p>
         </Block>
         <List >
             <ListItem style="background-color: var(--f7-theme-color-bg-tint-color)">
@@ -49,9 +47,10 @@
         </List>
 
         <!-- Управление режимом определения Fake GPS -->
+        {#if (locale === "ru" || locale === "RU")}
         <BlockTitle ><span>{$t('service.system.fakegps.title')}</span></BlockTitle>
         <Block mediumInset>
-          <p><i>
+          <p><i>{$t('service.system.fakegps.title')}
             Включает возможность обнаружения спуффинга сигнала GPS и интеллектуального переключения между
             режимами работы "Одометр" и "Таймер".<br>
             </i>
@@ -68,6 +67,7 @@
                 <ListItemCell class="width-auto flex-shrink-4"><Toggle bind:checked={tmpSystem.fake}  /></ListItemCell>
             </ListItem>
         </List>
+        {/if}
     {/if}
 
 </Page>
@@ -96,6 +96,8 @@
     let system = useStore('system', (value) => system = value);
     let mapSettings = useStore('mapSettings', (value) => mapSettings = value);
     let ver = useStore('ver', (value) => ver = value);
+    //let locale = useStore('locale', (value) => locale = value);
+    let locale = "ru"
 
     let tmpSystem = system
     let ctrlpump = false
@@ -106,16 +108,21 @@
     let Tdpms = 0
     $: {
       if (ver.hw[0] == 'B') Tdpms = 1000
-      if (ver.hw[0] == 'C') Tdpms = 1000 // 10 секунд работает насос
+      if (ver.hw[0] == 'C') Tdpms = 3000 // 10 секунд работает насос
       if (ver.hw[0] == 'd') Tdpms = 1000 // hw: dev - 10 секунд работает насос
     }
 
 
     $: if (!connected) document.location.reload()
     $: {
-      if (ctrlpump) store.dispatch('modeWork', store.state.OILER_PUMPING)
+      if (ctrlpump) {
+        store.dispatch('modeWork', store.state.OILER_PUMPING)
+        setTimeout(() => {
+            ctrlpump = false
+        }, 180000)
+      }
       else store.dispatch('modeWork', store.state.OILER_AUTO)
-      store.dispatch('ctrlPump', [ctrlpump, 0, {dpms: Tdpms, dpdp: 1}])
+      store.dispatch('ctrlPump', [ctrlpump, 0, {dpms: Tdpms, dpdp: 1000}])
     }
 
     $: store.dispatch('fakeGPS', tmpSystem.fake)

@@ -66,23 +66,30 @@
     "settings.sensor.wheel.width": "Tire width (mm)",
     "settings.sensor.wheel.height": "Tire height (%)",
 
-    "service.title": "Service",
-    "service.wifi.title": "Wi-Fi Access Point",
+"service.title": "Service",
+"service.wifi.title": "Wi-Fi Access Point",
     "service.wifi.ap.title": "Access point of the control unit",
+    "service.wifi.ap.psw.title": "Password",
+    "service.wifi.ap.alwson.title": "WiFi is always on:",
+    "service.wifi.ap.ssid.plchldr": "Enter your name",
+    "service.wifi.ap.psw.plchldr": "Enter your password",
     "service.wifi.sta.title": "Access point for updating",
-
-    "service.system.title": "System",
-    "service.update.title": "Update",
-    "service.about.title": "About",
-
+"service.system.title": "System",
     "service.system.pumping.title": "Priming",
     "service.system.pumping.text_toggle": "Filling in the system",
     "service.system.onoff.title": "Auto Power on/off",
-    "service.system.onoff.text_toggle1": "Start learning",
+    "service.system.onoff.text_toggle1": "Start training",
     "service.system.onoff.text_toggle2": "Training is underway...",
+    "service.system.onoff.block.p1": "Selects parameters for the automatic on/off function of the lubricator when connected directly to the battery, without using the ACC signal.",
+    "service.system.onoff.block.p2": "To ensure the function works correctly during training, strictly follow the instructions:",
+    "service.system.onoff.block.p3": "1. Start the engine.",
+    "service.system.onoff.block.p4": "2. Wait for about 30 seconds.",
+    "service.system.onoff.block.p5": "3. Click the \"Start training\" switch.",
+    "service.system.onoff.block.p6": "4. As soon as the indicator on the button starts flashing, turn off the ignition (stop the engine).",
+    "service.system.onoff.block.p7": "5. The learning process of the automatic lubricator lasts approximately 20 seconds, during which the indicator flashes continuously and then the control unit reboots.",
     "service.system.fakegps.title": "Spoofing GPS",
     "service.system.fakegps.text_toggle": "GPS signal Analysis",
-
+"service.update.title": "Update",
     "service.update.fw.title1": "Download firmware",
     "service.update.fw.title2": "Update firmware",
     "service.update.fw.success": "Update success",
@@ -91,11 +98,16 @@
     "service.update.cnfg.button.title": "Reset",
     "service.update.cnfg.confirm.text": "All current settings will be reset to factory settings. Are you sure?",
     "service.update.cnfg.confirm.error": "Error resetting settings. Try again.",
-
-    "service.diag.title": "Diagnostics",
+    "service.update.file.title": "Select file...",
+"service.diag.title": "Diagnostics",
     "service.diag.acord.title1": "Possible malfunctions",
     "service.diag.acord.title2": "Feedback",
     "service.diag.acord.title3": "Software update firmware",
+"service.about.title": "About",
+    "service.about": "About the app",
+    "service.about.block1": "Client application for setting the operating parameters of the automatic chain lubricator \"Cosmoiler\".",
+    "service.about.block2": "Internet access is not required for the operation of the client application and the lubricator control unit.",
+    "service.about.block3": "More detailed information is available at: ",
 
     "button.reset": "Reset",
     "button.start": "Start",
@@ -144,4 +156,5 @@
     "pumping.attention.content4": "4. Включить пополнение.",
 
     "attention.title": "Attention!"
+
 }

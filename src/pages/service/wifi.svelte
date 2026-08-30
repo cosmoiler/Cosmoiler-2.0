@@ -10,7 +10,7 @@
   <List class={`settings-main__list-item`}>
     <ListInput class={`settings-main__list-item`}
       type="text"
-      placeholder="Введите имя"
+      placeholder={$t('service.wifi.ap.ssid.plchldr')}
       bind:value={system.ap.ssid}
       clearButton
     >
@@ -18,20 +18,21 @@
     </ListInput>
     <ListInput class={`settings-main__list-item`}
       type="password"
-      placeholder="Введите пароль"
+      placeholder={$t('service.wifi.ap.psw.plchldr')}
       bind:value={system.ap.psw}
       clearButton
     >
-      <div slot='label' class="list-input__label list-input__label-text_color">Пароль</div>
+      <div slot='label' class="list-input__label list-input__label-text_color">{$t('service.wifi.ap.psw.title')}</div>
     </ListInput>
     <ListItem class={`settings-main__list-item`}>
-      <div slot='title' class="list-input__label list-input__label-text_color">WiFi всегда включен:</div>
+      <div slot='title' class="list-input__label list-input__label-text_color">{$t('service.wifi.ap.alwson.title')}</div>
       <span slot="after">
         <Toggle bind:checked={system.ap.pwr}  />
       </span>
     </ListItem>
   </List>
 
+  {#if false}
   <BlockTitle><span>{$t('service.wifi.sta.title')}</span></BlockTitle>
   <List>
     <ListInput class={`settings-main__list-item`}
@@ -48,6 +49,7 @@
       <div slot='label' class="list-input__label list-input__label-text_color">Пароль</div>
     </ListInput>
   </List>
+  {/if}
 </Page>
 
 <script>
@@ -73,7 +75,7 @@
 
     function pageAfteOut() {
       mapSettings.set("ap", system.ap)
-      mapSettings.set("sta", system.sta)
+     // mapSettings.set("sta", system.sta)
       log(mapSettings)
       store.dispatch('sendSystem', system)
     }

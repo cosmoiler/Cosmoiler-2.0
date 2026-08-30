@@ -59,7 +59,7 @@
 
     $: if (files) {
         nameFile = files[0].name
-    } else nameFile = "Выберите файл..."
+    } else nameFile = $t('service.update.file.title')
 
     let statusFW = 0
     let statusFS = 0

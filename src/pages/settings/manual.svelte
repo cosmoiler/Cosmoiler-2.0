@@ -31,7 +31,7 @@
 
   $: rangeValues = [
       {
-          title: "Объем масла",
+          title: $t('settings.manual.oilvolume'),
           value: dpms_rel,//Math.trunc(tmpManual.pump.dpms * 100 / tmpManual.pump.dpdp),
           name_value: "%",
           minValue: 5, // 0.1
@@ -51,9 +51,9 @@
           }
       },
       {
-          title: "Таймер",
+          title: $t('all.timer'),
           value: tmpManual.pump.dpdp/1000, //Math.round(/10) * 10,
-          name_value: "сек",
+          name_value: $t('all.seconds'),
           minValue: 0.500,
           maxValue: 2.000,
           stepValue: 0.100,
