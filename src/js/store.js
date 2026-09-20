@@ -1,6 +1,5 @@
 
 import { createStore } from 'framework7/lite';
-//import websocketStore from './websocket.js';
 import { f7 } from 'framework7-svelte';
 import log from './debug.js'
 
@@ -36,42 +35,150 @@ function uri() {
         return document.location.host
 }
 
+// ---------------------------------------------------------------------------
+// ! Контроль связи с устройством
+//
+// Связь измеряется НЕ «пингом по расписанию», а временем последнего УСПЕШНОГО
+// ответа устройства (lastOkAt). Любой запрос это время обновляет, поэтому
+// отдельный зонд уходит только когда реального трафика нет: на вкладке
+// телеметрии (опрос 500 мс) лишних запросов не появляется вовсе, а на пустой
+// странице зонд идёт не чаще, чем раньше шёл /ping.
+// ---------------------------------------------------------------------------
+
+/** Период тика сторожа. Сам тик сети не трогает — только читает время. */
+const WATCHDOG_MS = 500;
+/** Простой, после которого отправляется зонд GET /ping. */
+const PROBE_IDLE_MS = 1000;
+/** Молчание, после которого связь считается потерянной. */
+const LINK_LOST_MS = 2000;
+/**
+ * Таймаут запроса к устройству. Без него «зависший» запрос висит до
+ * системного таймаута TCP (десятки секунд), и сторож не может отличить
+ * «устройство мертво» от «устройство медленное» — интерфейс не реагирует на
+ * потерю связи.
+ */
+const DEVICE_TIMEOUT_MS = 1500;
+
+/** Время последнего успешного ответа устройства (0 = ещё ни одного). */
+let lastOkAt = 0;
+/** Текущее представление о связи — чтобы не писать в state на каждом тике. */
+let linkDown = true;
+let probeInFlight = false;
+let watchdogTimer = 0;
+
+/** Отметка успешного обмена — продлевает «жизнь» связи. */
+function markOk() {
+  lastOkAt = Date.now();
+}
+
+/**
+ * Запрос к устройству: таймаут + отметка успеха для сторожа.
+ *
+ * Обращаться к устройству следует через эту функцию, а не через f7.request
+ * напрямую: иначе запрос не продлит lastOkAt и заставит сторож слать лишние
+ * зонды. Полная форма f7.request({...}) нужна потому, что сокращённые вызовы
+ * (f7.request.get/post) опций не принимают — второй аргумент у них это data.
+ */
+function deviceRequest(path, options) {
+  return f7.request(Object.assign({
+    url: 'http://' + uri() + path,
+    method: 'GET',
+    timeout: DEVICE_TIMEOUT_MS,
+  }, options)).then((response) => {
+    markOk();
+    return response;
+  });
+}
+
+/** Разовая проверка связи (зонд и проверка перед загрузкой настроек). */
 const checkOnlineStatus = async () => {
   try {
-    const online = await fetch("http://"+uri()+'/ping');
-    return online.status >= 200 && online.status < 300; // either true or false
+    await deviceRequest('/ping');
+    return true;
   } catch (err) {
-    return false; // definitely offline
+    return false;
   }
 };
 
-/* const checkOnlineStatusTest = async () => {
-  try {
-    const online = await fetch('http://ya.ru');
-    return true ;//online.status >= 200 && online.status < 300; // either true or false
-  } catch (err) {
-    return false; // definitely offline
-  }
-}; */
+/**
+ * Один зонд. Больше одного запроса «в полёте» не держим: иначе зонды начнут
+ * конкурировать за сокеты httpd (на устройстве max_open_sockets = 6).
+ */
+function probeOnce() {
+  if (probeInFlight) return;
+  probeInFlight = true;
+  const done = () => { probeInFlight = false; };
+  deviceRequest('/ping').then(done, done);
+}
 
-/* const wsStore = websocketStore('ws://' + uri() + '/ws', {}, [],
-  {
-    debug: false,
-    reconnectionDelayGrowFactor: 1,
-    maxReconnectionDelay: 6000,
-    minReconnectionDelay: 3000,
-    reconnectInterval: 1000,
-    connectionTimeout: 2000,
-    maxReconnectAttempts: 0,
-    automaticOpen: false,
-    //maxReconnectAttempts: 1
-  }) */
+/** Единственное место, где меняется state.connect. */
+function setLink(state, down) {
+  if (down === linkDown) return;
+  linkDown = down;
+  state.connect = !down;
+  log("CONNECT: ", !down);
+}
 
-let timeoutId;
+/** Тик сторожа: только чтение времени (+ зонд, если давно нет трафика). */
+function watchdogTick(state) {
+  const silent = Date.now() - lastOkAt;
+  // Когда сеть у самого телефона пропала, зондировать бессмысленно.
+  if (silent > PROBE_IDLE_MS && navigator.onLine !== false) probeOnce();
+  setLink(state, silent > LINK_LOST_MS);
+}
+
+function startWatchdog(state) {
+  if (watchdogTimer) return; // идемпотентно
+
+  // Потеря Wi-Fi — самый частый случай (устройство выключили/перезагрузили,
+  // вышли из зоны AP). Это видно мгновенно и бесплатно, без единого запроса.
+  window.addEventListener('offline', () => {
+    lastOkAt = 0;
+    setLink(state, true);
+  });
+  // «online» НЕ означает, что устройство снова доступно, поэтому связь не
+  // объявляем восстановленной, а лишь сразу шлём зонд.
+  window.addEventListener('online', () => probeOnce());
+
+  watchdogTimer = setInterval(() => watchdogTick(state), WATCHDOG_MS);
+  watchdogTick(state);
+}
+
+/**
+ * ! WebSocket здесь СОЗНАТЕЛЬНО не используется — не возвращайте его.
+ *
+ * В прошивке WS-сервера нет: в main/HAL/WebBsp.cpp маршруты /telemetry/start
+ * и /telemetry/stop объявлены заглушками с пояснением «Отдельный сеанс
+ * телеметрии не нужен: страница опрашивает /telemetry/get сама. В legacy
+ * start() поднимал задачу и слал кадры по WebSocket — этот интерфейс в
+ * проекте не используется».
+ *
+ * Кроме того, конфигурация httpd этому прямо мешает: max_open_sockets = 6 при
+ * lru_purge_enable = true. Постоянно висящий WS-сокет занял бы один из шести
+ * слотов, а LRU вытесняет «самое давно не использованное» соединение — то
+ * есть простаивающий WS убивался бы первым при каждой загрузке страницы.
+ *
+ * Вместо этого — HTTP-опрос (см. requestTelemetryStart и init).
+ */
+
+/**
+ * ! Отложенная отправка настроек на устройство.
+ *
+ * Раньше здесь был ОДИН общий timeoutId, который по очереди перезаписывали
+ * sendDistance / sendTime / sendManual / sendPump. Из-за этого сохранение
+ * одних настроек отменяло ещё не отправленные изменения других (окно ~2 с),
+ * то есть правки могли не доехать до устройства. Теперь таймер у каждого
+ * канала свой.
+ */
+const sendTimers = {};
+
+function deferSend(key, fn, delay = 2000) {
+  clearTimeout(sendTimers[key]);
+  sendTimers[key] = setTimeout(fn, delay);
+}
 
 const store = createStore({
   state: {
-   // wsStore: wsStore,
     telemetryInterval: 0,
     connect: false,
    // trigg_connect: false; // триггер изменения статуса подключения
@@ -210,14 +317,16 @@ const store = createStore({
 
       log("INIT")
 
-      //state.connect = true
+      // Таймаут по умолчанию для запросов к устройству (см. deviceRequest).
+      // Ставится здесь, а не на уровне модуля: на момент импорта store.js
+      // экземпляр f7 ещё не создан — его устанавливает framework7-svelte при
+      // инициализации App. Исключение — загрузка прошивки с cosmoiler.ru: там
+      // явно указан timeout: 0, иначе большой файл не успеет скачаться.
+      f7.request.setup({ timeout: DEVICE_TIMEOUT_MS });
 
-      setInterval(async () => {
-        const result = await checkOnlineStatus();
-        state.connect = result
-        log("CONNECT: ", state.connect)
-        //state.connect = true
-      }, 2000)
+      // Вместо «пинга по расписанию» — сторож времени последнего успешного
+      // ответа (см. блок «Контроль связи» выше). Он сам решает, когда нужен зонд.
+      startWatchdog(state);
 
       window.addEventListener("load", async (event) => {
         //const statusDisplay = document.getElementById("status");
@@ -314,38 +423,49 @@ const store = createStore({
       log('requestGNSS')
     },
 
-    async requestTelemetryStart({state}) {
-      const online = await checkOnlineStatus();
-      if (online) {
-        f7.request.get('http://' + uri() + '/telemetry/start')
-        f7.request.get('http://' + uri() + '/telemetry/get')
-          .then((response)=> {
+    requestTelemetryStart({state}) {
+      // Идемпотентно. Раньше при повторном pageTabShow создавался ЕЩЁ один
+      // интервал, а ссылка на предыдущий терялась (перезапись без
+      // clearInterval) — опрос начинал идти несколькими циклами сразу, и
+      // остановить их requestTelemetryStop уже не мог.
+      clearInterval(state.telemetryInterval);
+      state.telemetryInterval = 0;
+
+      // Без предварительного checkOnlineStatus() (GET /ping): в цикле ниже он
+      // выполнялся перед КАЖДЫМ опросом, то есть на 500 мс уходило 2 запроса
+      // вместо одного.
+      //
+      // Запрос идёт через deviceRequest(): каждый успешный ответ продлевает
+      // связь (lastOkAt), поэтому пока эта страница открыта, сторож не шлёт ни
+      // одного лишнего зонда.
+      //
+      // GET /telemetry/start не нужен: на устройстве это заглушка, которая
+      // сразу отвечает true и ничего не меняет (firmware/main/HAL/WebBsp.cpp,
+      // Route::TelemetryStart: «Отдельный сеанс телеметрии не нужен: страница
+      // опрашивает /telemetry/get сама»).
+      deviceRequest('/telemetry/get')
+        .then((response) => {
+          state.telemetry = JSON.parse(response.data)
+        })
+        .catch((err) => {
+          /* связь отслеживает сторож по lastOkAt */
+        })
+
+      state.telemetryInterval = setInterval(() => {
+        deviceRequest('/telemetry/get')
+          .then((response) => {
             state.telemetry = JSON.parse(response.data)
           })
-          .catch((err) => {
-            /* state.connect = false */
-          })
-      }
-
-      state.telemetryInterval = setInterval(async () => {
-        const online = await checkOnlineStatus();
-        if (online) {
-          f7.request.get('http://' + uri() + '/telemetry/get')
-            .then((response)=> {
-              state.telemetry = JSON.parse(response.data)
-            })
-            .catch((err) => { /* state.connect = false */ })
-        }
+          .catch((err) => { /* связь отслеживает сторож по lastOkAt */ })
       }, 500)
     },
 
     requestTelemetryStop({state}) {
       clearInterval(state.telemetryInterval);
-/*       const online = await checkOnlineStatus();
-      if (online) {
-        //f7.request.get('http://' + uri() + '/telemetry/stop')
-        //wsStore.close()
-      } */
+      state.telemetryInterval = 0;
+      // GET /telemetry/stop — тоже заглушка на устройстве: отдельного сеанса
+      // телеметрии нет (см. комментарий в requestTelemetryStart), поэтому
+      // запрос не отправляется.
     },
 
     calcDistance({state}, _trip) {
@@ -368,8 +488,7 @@ const store = createStore({
     sendDistance({state}, data) {
       state.odometer = data
       state.odometer = state.odometer
-      clearTimeout(timeoutId);
-      timeoutId = setTimeout(() => {
+      deferSend('trip', () => {
         f7.request.postJSON('http://' + uri() + '/settings/trip', Object.fromEntries(state.mapSettings))
         .then((res) => {
           log(res)
@@ -384,15 +503,14 @@ const store = createStore({
                                                           // Данная запись прдотвращает попадание в массив повторяющихся значений id
         state.fChngSettings = { status: true, id: [...new Set([...state.fChngSettings.id, state.odometer.id])]};
         log("send Dist = ", state.odometer)
-      }, 2000)
+      })
 
     },
 
     sendTime({state}, data) {
       state.timer = data
       state.timer = state.timer
-      clearTimeout(timeoutId);
-      timeoutId = setTimeout(() => {
+      deferSend('time', () => {
         f7.request.postJSON('http://' + uri() + '/settings/time', Object.fromEntries(state.mapSettings))
         .then((res) => {
           log(res)
@@ -405,14 +523,13 @@ const store = createStore({
         state.mapSettings.clear()
         state.fChngSettings = { status: true, id: [...new Set([...state.fChngSettings.id, state.timer.id])]}
         log("send Time = ", state.timer)
-      }, 2000)
+      })
     },
 
     sendManual({state}, data) {
       state.manual = data
       state.manual = state.manual
-      clearTimeout(timeoutId);
-      timeoutId = setTimeout(() => {
+      deferSend('manual', () => {
           f7.request.postJSON('http://' + uri() + '/settings/manual', state.manual)
           .then((res) => {
             log(res)
@@ -424,14 +541,13 @@ const store = createStore({
           })
           state.fChngSettings = { status: true, id: [...new Set([...state.fChngSettings.id, state.manual.id])]};
           log("send Pump = ", state.manual);
-      }, 2000)
+      })
     },
 
     sendPump({state}, data) {
       state.pump = data;
       state.pump = state.pump;
-      clearTimeout(timeoutId);
-      timeoutId = setTimeout(() => {
+      deferSend('pump', () => {
           f7.request.postJSON('http://' + uri() + '/settings/pump', {dpms: data.dpms})
           .then((res) => {
             log(res)
@@ -443,7 +559,7 @@ const store = createStore({
           })
           state.fChngSettings = { status: true, id: [...new Set([...state.fChngSettings.id, state.pump.id])]};
           log("send Pump = ", state.pump);
-      }, 2000);
+      });
 
     },
 
@@ -496,7 +612,8 @@ const store = createStore({
       }
       f7.request.get('http://' + uri() + rest_str)
       .catch(() => {
-        f7.alert('Нет связи с блоком управеления. Команда не выполнена','Cosmoiler')
+        // f7.alert не существует: было TypeError вместо сообщения пользователю.
+        f7.dialog.alert('Нет связи с блоком управеления. Команда не выполнена', 'Cosmoiler')
       })
     },
 
@@ -513,14 +630,14 @@ const store = createStore({
     ctrlBright({state}, data) {
       f7.request.post('http://' + uri() + '/settings/bright?v='+ data)
         .catch(() => {
-          f7.alert('Нет связи с блоком управеления. Команда не выполнена.','Cosmoiler')
+          f7.dialog.alert('Нет связи с блоком управеления. Команда не выполнена.', 'Cosmoiler')
         })
     },
 
     fakeGPS({state}, data) {
       f7.request.post('http://' + uri() + '/settings/fakegps?state='+(data>>0))
       .catch(() => {
-        f7.alert('Нет связи с блоком управеления. Команда не выполнена.','Cosmoiler')
+        f7.dialog.alert('Нет связи с блоком управеления. Команда не выполнена.', 'Cosmoiler')
       })
     }
   },

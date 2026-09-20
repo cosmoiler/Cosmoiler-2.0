@@ -72,6 +72,9 @@
         method: 'GET',
         async: true,
         cache: false,
+        // Запрос в интернет, а не к устройству: глобальный таймаут на запросы
+        // к ESP32 (store.js, f7.request.setup) здесь не нужен.
+        timeout: 0,
         success: (resp, status) => {
           fTestConnection = true
         },
@@ -87,6 +90,8 @@
                   data: {sn: ver.sn, verfw: ver.fw},
                   async: true,
                   cache: false,
+                  // Скачивание файла прошивки: таймаут снят (см. выше).
+                  timeout: 0,
                   xhrFields: {responseType: "blob"},
                   success: function(response, status, xhr) {
                     log("Succes request FW")

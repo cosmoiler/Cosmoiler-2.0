@@ -10,9 +10,9 @@
   "scripts": {
     "start": "npm run dev",
     "dev": "cross-env NODE_ENV=development webpack serve --config ./build/webpack.config.js",
-    "buildcpx": "cross-env NODE_ENV=production node ./build/build.js && npm run postinstall",
     "build": "cross-env NODE_ENV=production node ./build/build.js",
-    "postinstall": "cpx ./www/*.{json,html,gz,woff,png} ./D/Cosmoiler/Prog/Firmware/ESP32/workspace/cosmoiler-idf/data/"
+    "sync": "node ./build/sync-firmware.js",
+    "build:led": "npm run build && npm run sync"
   },
   "browserslist": [
     "Android >= 7",
@@ -32,7 +32,6 @@
     "framework7": "^6.3.17",
     "framework7-icons": "^3.0.1",
     "framework7-svelte": "^6.3.17",
-    "reconnecting-websocket": "^4.4.0",
     "renderkid": "^3.0.0",
     "skeleton-elements": "^3.5.0",
     "svelte": "^3.59.2",
