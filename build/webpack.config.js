@@ -46,6 +46,10 @@ module.exports = {
   },
   devtool: env === 'production' ? false : 'eval',
   devServer: {
+    // port зафиксирован: на него ссылается задача «web: dev-сервер (webpack serve)»
+    // в рабочем пространстве Cosmoiler-AI и launch-конфигурация «Web: Chrome»
+    // (умолчание webpack-dev-server — тоже 8080, но пусть будет явно).
+    port: 8080,
     hot: true,
     open: true,
     compress: true,
