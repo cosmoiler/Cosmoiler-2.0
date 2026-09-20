@@ -11,7 +11,7 @@ Framework7 app created with following options:
 {
   "cwd": "d:\\Cosmoiler\\Prog\\Frontend\\aaaa",
   "type": [
-    "capacitor"
+    "web"
   ],
   "name": "My App aaa",
   "framework": "svelte",
@@ -100,13 +100,7 @@ Framework7 app created with following options:
     "preserveAssetsPaths": false,
     "inlineAssets": true
   },
-  "pkg": "io.framework7.myapp",
-  "capacitor": {
-    "platforms": [
-      "ios",
-      "android"
-    ]
-  }
+  "pkg": "io.framework7.myapp"
 }
 ```
 ## Update formware
@@ -118,20 +112,26 @@ Framework7 app created with following options:
 * 🔥 `start` - run development server
 * 🔧 `dev` - run development server
 * 🔧 `build` - build web app for production (см. также файл package.json)
-* 🔧 `buildcpx` - build web app for production and copy to folder DATA (см. также файл package.json)
-* 📱 `build-capacitor-ios` - build app and copy it to iOS capacitor project
-* 📱 `build-capacitor-android` - build app and copy it to Android capacitor project
+* 🔧 `sync` - скопировать результат сборки в `firmware/main/Core/WebCore/Data` (см. build/sync-firmware.js)
+* 🔧 `build:led` - `build` + `sync`; штатное действие после правок интерфейса
 
 ## WebPack
 
 There is a webpack bundler setup. It compiles and bundles all "front-end" resources. You should work only with files located in `/src` folder. Webpack config located in `build/webpack.config.js`.
 
 Webpack has specific way of handling static assets (CSS files, images, audios). You can learn more about correct way of doing things on [official webpack documentation](https://webpack.js.org/guides/asset-management/).
-## Capacitor
 
-This project created uses Capacitor. Check out [official Capacitor documentation](https://capacitorjs.com) for more examples and usage examples.
+## Capacitor — удалён
 
+Capacitor в проекте больше не используется: интерфейс вшивается в прошивку и
+отдаётся прямо с ESP32, а открывается в браузере телефона (см.
+`docs/web-frontend.md`).
 
+Удалены: зависимости `@capacitor/core|android|ios`, `@capacitor/cli`,
+`cordova-res`, файл `capacitor.config.json`, каталоги `android/`, `ios/`,
+`resources/` и `src/js/capacitor-app.js`. Заодно убран мёртвый plumbing в сборке:
+`process.env.TARGET` и ветка `isCordova` (`build/build.js`,
+`build/webpack.config.js`).
 
 ## Assets
 
@@ -146,19 +146,6 @@ Or launch UI where you will be able to change icons and splash screens:
 ```
 framework7 assets --ui
 ```
-
-## Capacitor Assets
-
-Capacitor assets are located in `resources` folder which is intended to be used with `cordova-res` tool. To generate  mobile apps assets run in terminal:
-```
-npx cordova-res
-```
-
-Init Android
-
-* npx cap add android
-
-Check out [official cordova-res documentation](https://github.com/ionic-team/cordova-res) for more usage examples.
 
 ## Documentation & Resources
 

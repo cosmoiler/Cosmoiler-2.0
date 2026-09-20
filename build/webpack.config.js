@@ -18,7 +18,6 @@ function resolvePath(dir) {
 }
 
 const env = process.env.NODE_ENV || 'development';
-const target = process.env.TARGET || 'web';
 
 //const path_data = 'c:/Users/Cosmoiler/Documents/Prog/Firmware/ESP32/Cosmoiler/data/';
 
@@ -177,7 +176,6 @@ module.exports = {
   plugins: [
     new webpack.DefinePlugin({
       'process.env.NODE_ENV': JSON.stringify(env),
-      'process.env.TARGET': JSON.stringify(target),
     }),
     //new BundleAnalyzerPlugin(),
     ...(env === 'production' ? [

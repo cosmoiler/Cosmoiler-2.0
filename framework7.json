@@ -1,7 +1,7 @@
 {
   "cwd": "d:\\Cosmoiler\\Prog\\Frontend\\ver4",
   "type": [
-    "capacitor"
+    "web"
   ],
   "name": "Cosmoiler",
   "framework": "svelte",

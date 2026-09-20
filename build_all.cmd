@@ -11,10 +11,6 @@ call npm run build
 pause
 
 :1
-rem echo Only Android (y, n):
-set /p choice="Only Android (y, n):"
-if /i "%choice%" == "y" GOTO ANDR
-
 pause
 
 rem copy .\www\img\icon.png .\www\*.*
@@ -59,10 +55,5 @@ rem copy .\dist\app.css.gz ..\..\Firmware\cosmoiler-workspace\Cosmoiler\SPIFFS\C
 rem copy .\dist\app.js.gz ..\..\Firmware\cosmoiler-workspace\Cosmoiler\SPIFFS\Common\app.js.gz
 rem copy .\dist\vendor.js.gz ..\..\Firmware\cosmoiler-workspace\Cosmoiler\SPIFFS\Common\vendor.js.gz
 rem copy .\dist\manifest.js ..\..\Firmware\cosmoiler-workspace\Cosmoiler\SPIFFS\Common\manifest.js
-
-:ANDR
-call npm run build-capacitor-android
-
-rem if /i "%choice%" == "y" GOTO ANDR2
 
 pause
