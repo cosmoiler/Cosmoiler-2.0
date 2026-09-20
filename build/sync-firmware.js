@@ -22,7 +22,7 @@
  *
  * Запуск:
  *     npm run sync          # только копирование
- *     npm run build:led     # сборка + копирование
+ *     npm run build:cosmoiler   # сборка + копирование
  */
 
 'use strict';

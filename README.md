@@ -113,7 +113,7 @@ Framework7 app created with following options:
 * 🔧 `dev` - run development server
 * 🔧 `build` - build web app for production (см. также файл package.json)
 * 🔧 `sync` - скопировать результат сборки в `firmware/main/Core/WebCore/Data` (см. build/sync-firmware.js)
-* 🔧 `build:led` - `build` + `sync`; штатное действие после правок интерфейса
+* 🔧 `build:cosmoiler` - `build` + `sync`; штатное действие после правок интерфейса
 
 ## WebPack
 

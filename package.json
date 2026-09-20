@@ -12,7 +12,7 @@
     "dev": "cross-env NODE_ENV=development webpack serve --config ./build/webpack.config.js",
     "build": "cross-env NODE_ENV=production node ./build/build.js",
     "sync": "node ./build/sync-firmware.js",
-    "build:led": "npm run build && npm run sync"
+    "build:cosmoiler": "npm run build && npm run sync"
   },
   "browserslist": [
     "Android >= 7",

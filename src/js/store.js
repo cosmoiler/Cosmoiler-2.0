@@ -328,7 +328,16 @@ const store = createStore({
       // ответа (см. блок «Контроль связи» выше). Он сам решает, когда нужен зонд.
       startWatchdog(state);
 
-      window.addEventListener("load", async (event) => {
+      /**
+       * Начальная загрузка настроек с устройства.
+       *
+       * Вынесено в функцию, потому что полагаться на событие load на window
+       * нельзя: init() вызывается из f7ready() внутри onMount, и если к этому
+       * моменту страница успела догрузиться (кеш браузера, быстрый старт,
+       * повторное открытие вкладки), событие load уже прошло — подписка на него
+       * не сработала бы НИКОГДА и настройки не загрузились бы вовсе.
+       */
+      async function loadInitialSettings() {
         //const statusDisplay = document.getElementById("status");
         const online = await checkOnlineStatus()
         if (online) {
@@ -368,19 +377,20 @@ const store = createStore({
             .catch((err) => { /* state.connect = false */ })
         }
         log("ONLINE = ", online)
-      });
+      }
 
-/*       wsStore.subscribe((value) => {
-        //log('[ws value]=> ', value)
-
-        if (value) {
-          if (value.id == 'telemetry') {
-            state.telemetry = value
-            log('Telemetry: ', state.telemetry)
-          }
-          log('Store state', state)
-        }
-      }) */
+      // Ждать load всё же стоит: браузер грузит index.html, app.css, app.js,
+      // шрифт и иконку — это до шести параллельных соединений, ровно предел
+      // httpd на устройстве (max_open_sockets = 6). Ещё семь запросов настроек
+      // вдобавок к этому попали бы под lru_purge_enable и могли помешать
+      // загрузке страницы.
+      //
+      // document.readyState === 'complete' — это и есть «load уже отгремел».
+      if (document.readyState === 'complete') {
+        loadInitialSettings();
+      } else {
+        window.addEventListener("load", loadInitialSettings);
+      }
     },
 
     async getMode({state}) {
