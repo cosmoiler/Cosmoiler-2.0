@@ -1,6 +1,7 @@
 
 import { createStore } from 'framework7/lite';
 import { f7 } from 'framework7-svelte';
+import { request } from './http.js';
 import log from './debug.js'
 
 function getUrlVar() {
@@ -99,17 +100,18 @@ function markOk() {
 }
 
 /**
- * Запрос к устройству: таймаут + отметка успеха для сторожа.
+ * Запрос к устройству: базовый адрес, таймаут и отметка успеха для сторожа.
  *
- * Обращаться к устройству следует через эту функцию, а не через f7.request
+ * Обращаться к устройству следует через эту функцию, а не через request()
  * напрямую: иначе запрос не продлит lastOkAt и заставит сторож слать лишние
- * зонды. Полная форма f7.request({...}) нужна потому, что сокращённые вызовы
- * (f7.request.get/post) опций не принимают — второй аргумент у них это data.
+ * зонды. Всё, что относится к политике общения с устройством, собрано здесь;
+ * транспорт — в http.js.
+ *
+ * @param {string} path — путь от корня устройства, например '/settings/trip'.
+ * @param {object} [options] — {method, data, timeout, responseType} (см. http.js).
  */
 function deviceRequest(path, options) {
-  return f7.request(Object.assign({
-    url: 'http://' + uri() + path,
-    method: 'GET',
+  return request('http://' + uri() + path, Object.assign({
     timeout: COMMAND_TIMEOUT_MS,
   }, options)).then((response) => {
     markOk();
@@ -370,12 +372,13 @@ const store = createStore({
 
       log("INIT")
 
-      // Таймаут по умолчанию для запросов к устройству (см. deviceRequest).
-      // Ставится здесь, а не на уровне модуля: на момент импорта store.js
-      // экземпляр f7 ещё не создан — его устанавливает framework7-svelte при
-      // инициализации App. Исключение — загрузка прошивки с cosmoiler.ru: там
-      // явно указан timeout: 0, иначе большой файл не успеет скачаться.
-      f7.request.setup({ timeout: COMMAND_TIMEOUT_MS });
+      // Таймаут задаётся на каждый запрос (см. deviceRequest), глобальной
+      // настройки больше нет: f7.request удалён в Framework7 8, а собственный
+      // транспорт (http.js) не зависит от созданного экземпляра приложения.
+      // Поэтому исчезла и прежняя ловушка «setup() нельзя звать на уровне
+      // модуля, пока f7 не создан».
+      // Запросы в интернет за прошивкой идут с timeout: 0 (см. diag.svelte) —
+      // иначе большой файл не успеет скачаться.
 
       // Вместо «пинга по расписанию» — сторож времени последнего успешного
       // ответа (см. блок «Контроль связи» выше). Он сам решает, когда нужен зонд.
@@ -394,20 +397,20 @@ const store = createStore({
         //const statusDisplay = document.getElementById("status");
         const online = await checkOnlineStatus()
         if (online) {
-          f7.request.get('http://' + uri() + '/settings/mode').then((response) => { state.mode = JSON.parse(response.data) });
-          f7.request.get('http://' + uri() + '/settings/trip').then((response) => { state.odometer = JSON.parse(response.data) });
-          f7.request.get('http://' + uri() + '/settings/time').then((response) => {
+          deviceRequest('/settings/mode').then((response) => { state.mode = JSON.parse(response.data) });
+          deviceRequest('/settings/trip').then((response) => { state.odometer = JSON.parse(response.data) });
+          deviceRequest('/settings/time').then((response) => {
             state.timer = JSON.parse(response.data)
             state.timer.presets.splice(1, 0, { time: 0, num: 0, cycles: 0 })
           });
-          f7.request.get('http://' + uri() + '/settings/manual').then((response) => { state.manual = JSON.parse(response.data) });
-          f7.request.get('http://' + uri() + '/settings/pump').then((response) => { state.pump = JSON.parse(response.data) });
-          f7.request.get('http://' + uri() + '/settings/system').then((response) => {
+          deviceRequest('/settings/manual').then((response) => { state.manual = JSON.parse(response.data) });
+          deviceRequest('/settings/pump').then((response) => { state.pump = JSON.parse(response.data) });
+          deviceRequest('/settings/system').then((response) => {
             state.system = JSON.parse(response.data)
             if (ToBoolean(state.system.gps) == false)
               state.odometer.sensor.gnss = false
           });
-          f7.request.get('http://' + uri() + '/settings/ver')
+          deviceRequest('/settings/ver')
             .then((response) => {
               state.ver = JSON.parse(response.data)
               localStorage.setItem('ver', response.data)
@@ -423,7 +426,7 @@ const store = createStore({
                 state.verfs = fs.match(/\d{1}/g).join('.');
               }
             });
-          f7.request.get('http://' + uri() + '/telemetry/get')
+          deviceRequest('/telemetry/get')
             .then((response)=> {
               state.telemetry = JSON.parse(response.data)
             })
@@ -449,7 +452,7 @@ const store = createStore({
     async getMode({state}) {
         const online = await checkOnlineStatus();
         if (online) {
-          f7.request.get('http://' + uri() + '/settings/mode')
+          deviceRequest('/settings/mode')
             .then((response) => { state.mode = JSON.parse(response.data) })
         }
     },
@@ -459,11 +462,11 @@ const store = createStore({
       //async () => {
         const online = await checkOnlineStatus();
         if (online) {
-          f7.request.get('http://' + uri() + '/settings/system').then((response) => {
+          deviceRequest('/settings/system').then((response) => {
             state.system = JSON.parse(response.data)
             if (!state.system.gps) state.odometer.sensor.gnss = false
           });
-          f7.request.get('http://' + uri() + '/settings/ver')
+          deviceRequest('/settings/ver')
             .then((response) => {
               state.ver = JSON.parse(response.data)
               localStorage.setItem('ver', response.data)
@@ -555,13 +558,13 @@ const store = createStore({
       state.odometer = data
       state.odometer = state.odometer
       deferSend('trip', () => {
-        f7.request.postJSON('http://' + uri() + '/settings/trip', Object.fromEntries(state.mapSettings))
+        deviceRequest('/settings/trip', { method: 'POST', data: Object.fromEntries(state.mapSettings) })
         .then((res) => {
           log(res)
         })
         .catch((err) => {
           f7.dialog.alert("Команда не выполнена!", "Cosmoiler")
-          f7.request.get('http://' + uri() + '/settings/trip')
+          deviceRequest('/settings/trip')
             .then((response) => { state.odometer = JSON.parse(response.data) })
         })
         state.mapSettings.clear();
@@ -577,14 +580,15 @@ const store = createStore({
       state.timer = data
       state.timer = state.timer
       deferSend('time', () => {
-        f7.request.postJSON('http://' + uri() + '/settings/time', Object.fromEntries(state.mapSettings))
+        deviceRequest('/settings/time', { method: 'POST', data: Object.fromEntries(state.mapSettings) })
         .then((res) => {
           log(res)
         })
         .catch((err) => {
           f7.dialog.alert("Команда не выполнена!", "Cosmoiler")
-          f7.request.get('http://' + uri() + '/settings/time')
-            .then((response) => { state.odometer = JSON.parse(response.data) })
+          // ! Было state.odometer: данные таймера затирали одометр.
+          deviceRequest('/settings/time')
+            .then((response) => { state.timer = JSON.parse(response.data) })
         })
         state.mapSettings.clear()
         state.fChngSettings = { status: true, id: [...new Set([...state.fChngSettings.id, state.timer.id])]}
@@ -596,14 +600,15 @@ const store = createStore({
       state.manual = data
       state.manual = state.manual
       deferSend('manual', () => {
-          f7.request.postJSON('http://' + uri() + '/settings/manual', state.manual)
+          deviceRequest('/settings/manual', { method: 'POST', data: state.manual })
           .then((res) => {
             log(res)
           })
           .catch((err) => {
             f7.dialog.alert("Команда не выполнена!", "Cosmoiler")
-            f7.request.get('http://' + uri() + '/settings/manual')
-              .then((response) => { state.odometer = JSON.parse(response.data) })
+            // ! Было state.odometer: данные manual затирали одометр.
+            deviceRequest('/settings/manual')
+              .then((response) => { state.manual = JSON.parse(response.data) })
           })
           state.fChngSettings = { status: true, id: [...new Set([...state.fChngSettings.id, state.manual.id])]};
           log("send Pump = ", state.manual);
@@ -614,14 +619,15 @@ const store = createStore({
       state.pump = data;
       state.pump = state.pump;
       deferSend('pump', () => {
-          f7.request.postJSON('http://' + uri() + '/settings/pump', {dpms: data.dpms})
+          deviceRequest('/settings/pump', { method: 'POST', data: {dpms: data.dpms} })
           .then((res) => {
             log(res)
           })
           .catch((err) => {
             f7.dialog.alert("Команда не выполнена!", "Cosmoiler")
-            f7.request.get('http://' + uri() + '/settings/pump')
-              .then((response) => { state.odometer = JSON.parse(response.data) })
+            // ! Было state.odometer: данные насоса затирали одометр.
+            deviceRequest('/settings/pump')
+              .then((response) => { state.pump = JSON.parse(response.data) })
           })
           state.fChngSettings = { status: true, id: [...new Set([...state.fChngSettings.id, state.pump.id])]};
           log("send Pump = ", state.pump);
@@ -633,13 +639,13 @@ const store = createStore({
         state.mode.m = data.m
         state.mode = state.mode
         log("send Mode = ", state.mode)
-        f7.request.postJSON('http://' + uri() + '/settings/mode', state.mode)
+        deviceRequest('/settings/mode', { method: 'POST', data: state.mode })
           .then((res) => {
             log(res)
           })
           .catch((err) => {
             f7.dialog.alert("Команда не выполнена!", "Cosmoiler")
-            f7.request.get('http://' + uri() + '/settings/mode')
+            deviceRequest('/settings/mode')
               .then((response) => { state.mode = JSON.parse(response.data) })
               .catch((err) => { /* state.connect = false */ })
           })
@@ -648,14 +654,15 @@ const store = createStore({
     sendSystem({state}, data) {
       state.system = data
       state.system = state.system
-      f7.request.postJSON('http://' + uri() + '/settings/system', Object.fromEntries(state.mapSettings))
+      deviceRequest('/settings/system', { method: 'POST', data: Object.fromEntries(state.mapSettings) })
       .then((res) => {
         log(res)
       })
       .catch((err) => {
         f7.dialog.alert("Команда не выполнена!", "Cosmoiler")
-        f7.request.get('http://' + uri() + '/settings/system')
-          .then((response) => { state.odometer = JSON.parse(response.data) })
+        // ! Было state.odometer: данные system затирали одометр.
+        deviceRequest('/settings/system')
+          .then((response) => { state.system = JSON.parse(response.data) })
       })
       state.mapSettings.clear()
       state.fChngSettings = { status: true, id: [...new Set([...state.fChngSettings.id, state.system.id])]}
@@ -676,7 +683,7 @@ const store = createStore({
       if (mode == store.state.OILER_TRAINING) {
         rest_str = '/state/training'
       }
-      f7.request.get('http://' + uri() + rest_str)
+      deviceRequest(rest_str)
       .catch(() => {
         // f7.alert не существует: было TypeError вместо сообщения пользователю.
         f7.dialog.alert('Нет связи с блоком управеления. Команда не выполнена', 'Cosmoiler')
@@ -684,7 +691,7 @@ const store = createStore({
     },
 
     ctrlPump({state}, settings) {
-      f7.request.postJSON('http://' + uri() + '/settings/pump/ctrl?state=' + (settings[0]>>0) + '&dir=' + settings[1], settings[2])
+      deviceRequest('/settings/pump/ctrl?state=' + (settings[0]>>0) + '&dir=' + settings[1], { method: 'POST', data: settings[2] })
       .then((res) => {
         log(res)
       })
@@ -694,14 +701,14 @@ const store = createStore({
     },
 
     ctrlBright({state}, data) {
-      f7.request.post('http://' + uri() + '/settings/bright?v='+ data)
+      deviceRequest('/settings/bright?v='+ data, { method: 'POST' })
         .catch(() => {
           f7.dialog.alert('Нет связи с блоком управеления. Команда не выполнена.', 'Cosmoiler')
         })
     },
 
     fakeGPS({state}, data) {
-      f7.request.post('http://' + uri() + '/settings/fakegps?state='+(data>>0))
+      deviceRequest('/settings/fakegps?state='+(data>>0), { method: 'POST' })
       .catch(() => {
         f7.dialog.alert('Нет связи с блоком управеления. Команда не выполнена.', 'Cosmoiler')
       })

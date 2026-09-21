@@ -44,6 +44,7 @@
     } from 'framework7-svelte';
     import {t} from '../../services/i18n.js';
     import { f7 } from 'framework7-svelte';
+    import { request } from '../../js/http.js';
     import log from '../../js/debug.js';
 
     let connected = useStore('connected', (value) => connected = value);
@@ -64,62 +65,62 @@
     let statusFW = 0
     let statusFS = 0
 
-    function downloadFW() {
-      let fEndDownloadFW = false
-      let fTestConnection = false
-      f7.request({
-        url: 'http://cosmoiler.ru/services/',
-        method: 'GET',
-        async: true,
-        cache: false,
-        // Запрос в интернет, а не к устройству: глобальный таймаут на запросы
-        // к ESP32 (store.js, f7.request.setup) здесь не нужен.
-        timeout: 0,
-        success: (resp, status) => {
-          fTestConnection = true
-        },
-        error: () => {
-          f7.dialog.alert("Нет связи с сервером обновлений. Включите интернет и попробуйте снова.", "Cosmoiler")
-          fTestConnection = false
-        },
-        complete: () => {
-          if (fTestConnection) {
-              f7.request({
-                  url: 'http://cosmoiler.ru/services/download',
-                  method: 'GET',
-                  data: {sn: ver.sn, verfw: ver.fw},
-                  async: true,
-                  cache: false,
-                  // Скачивание файла прошивки: таймаут снят (см. выше).
-                  timeout: 0,
-                  xhrFields: {responseType: "blob"},
-                  success: function(response, status, xhr) {
-                    log("Succes request FW")
-                    var url = window.URL || window.webkitURL;
-                    const link = document.createElement('a');
-                    var blob = new Blob([response])
-                    link.href = url.createObjectURL(blob);
-                    const fileName = xhr.getResponseHeader('Filename')
-                    const downloadFileName = decodeURIComponent(escape(fileName))
-                    log(downloadFileName)
-                    link.setAttribute('download', downloadFileName);
-                    link.click();
-                    statusFW = status
-                  },
-                  error: function(xhr, status) {
-                    log("Error connection", status)
-                    statusFW = status
-                  },
-                  complete: function() {
-                    fEndDownloadFW = true;
-                    log("Complete request FW")
-                    if ((statusFW != 200))
-                              f7.dialog.alert("Текущая версия последняя", "Cosmoiler")
-                  }
-              })
-          }
-        }
-      })
+    /** Отдаёт blob браузеру под именем, которое вернул сервер. */
+    function saveBlob(blob, fileName) {
+      if (!fileName) {
+        // Заголовок Filename не читается: сервер не отдал его в
+        // Access-Control-Expose-Headers. Раньше в этом случае файл сохранялся
+        // под именем «null» — молча и без расширения.
+        log("! Ответ без заголовка Filename: имя файла неизвестно")
+      }
+      var url = window.URL || window.webkitURL;
+      const link = document.createElement('a');
+      link.href = url.createObjectURL(blob);
+      const downloadFileName = fileName ? decodeURIComponent(escape(fileName)) : 'download'
+      log(downloadFileName)
+      link.setAttribute('download', downloadFileName);
+      link.click();
+      url.revokeObjectURL(link.href)
+    }
+
+    /**
+     * Скачивание файла прошивки с сервера обновлений.
+     *
+     * Это запрос В ИНТЕРНЕТ, а не к устройству, поэтому timeout: 0 — файл
+     * заведомо скачивается дольше любого лимита для ESP32 (в http.js
+     * по умолчанию 8 с).
+     *
+     * @returns {Promise<number>} HTTP-статус; 0 — запрос не удался.
+     */
+    async function downloadFromServer(params) {
+      try {
+        const res = await request('http://cosmoiler.ru/services/download', {
+          data: params,
+          timeout: 0,
+          responseType: 'blob',
+        })
+        log("Succes request FW: ", res.status)
+        saveBlob(res.data, res.headers.get('Filename'))
+        return res.status
+      } catch (err) {
+        log("Error connection", err)
+        return 0
+      }
+    }
+
+    async function downloadFW() {
+      // Проверка связи с сервером обновлений: сам файл не нужен.
+      try {
+        await request('http://cosmoiler.ru/services/', { timeout: 0 })
+      } catch (err) {
+        f7.dialog.alert("Нет связи с сервером обновлений. Включите интернет и попробуйте снова.", "Cosmoiler")
+        return
+      }
+
+      statusFW = await downloadFromServer({sn: ver.sn, verfw: ver.fw})
+
+      if ((statusFW != 200))
+        f7.dialog.alert("Текущая версия последняя", "Cosmoiler")
     }
 
     function update() {
@@ -150,7 +151,7 @@
         () => {
           //store.dispatch('cmdReset')
           f7.preloader.show();
-          f7.request.get('http://192.168.4.1/reset/cnfg')//http://192.168.4.1/clear
+          request('http://192.168.4.1/reset/cnfg')
           .then((res) => {
               f7.preloader.hide()
               log('192.168.4.1/status', res.data)
