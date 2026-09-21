@@ -12,16 +12,56 @@ TODO:
 | Слой | Чем | Версия |
 |---|---|---|
 | Сборщик | **Vite** (`vite.config.mjs`) | 5.x |
-| UI-фреймворк | Framework7 + framework7-svelte | 6.3.17 |
-| Компоненты | Svelte | 4.x |
+| UI-фреймворк | Framework7 + framework7-svelte | **9.1.3** |
+| Компоненты | Svelte | **5.x** |
 | Локализация | svelte-i18n | 4.x |
 | Стили | Less (+ postcss-preset-env) | |
 | Сеть | нативный `fetch` (`src/js/http.js`) | |
 
-⚠️ История: до 21.09.2026 сборка была на webpack 5 + svelte-loader + babel, а Svelte и
-svelte-i18n — предыдущих мажорных версий. Конфиг Vite обязан быть **`.mjs`**: в
-`package.json` нет `type: module`, поэтому `.js`-конфиг грузится через `require`, а
-`@sveltejs/vite-plugin-svelte` существует только как ES-модуль.
+⚠️ История: до 21.09.2026 сборка была на webpack 5 + svelte-loader + babel, затем
+проект переведён на Vite (Svelte 4). Обновление Framework7 6.3.17 → 9.1.3 и
+Svelte 4 → 5 сделано 22.09.2026.
+
+⚠️ Конфиг Vite обязан быть **`.mjs`**: в `package.json` нет `type: module`,
+поэтому `.js`-конфиг грузится через `require`, а `@sveltejs/vite-plugin-svelte`
+существует только как ES-модуль.
+
+⚠️ Версия плагина привязана к Vite: `@sveltejs/vite-plugin-svelte@4` требует
+Vite 5 (это и выбрано), `@5` — Vite 6, `@7` — уже Vite 8. Переход на новые Vite
+делать отдельным шагом вместе с повышением версии плагина.
+
+### Что важно знать про Framework7 9
+
+Версия 9 сломала совместимость заметно сильнее, чем обычный мажор — при правке
+интерфейса это надо держать в голове:
+
+* **`slot="..."` больше не работает.** Содержимое передаётся **сниппетами**
+  Svelte 5, а имена пропсов те же: `title`, `text`, `media`, `subtitle`,
+  `after`, `footer`, `label`. Пример — `src/components/home-listitem.svelte`.
+  Старый `slot="title"` в 9-й версии **молча игнорируется**, а не падает:
+  элемент списка просто рендерится пустым.
+* **События — callback-пропсы, а не `on:`**: `on:ptrRefresh` → `onPtrRefresh`,
+  `on:toggleChange` → `onToggleChange`, `on:click` → `onClick`, `on:change` →
+  `onChange`. Старые `on:` тоже не падают, а просто никогда не срабатывают.
+* **Удалены компоненты**: `Appbar` (его роль выполняет navbar), `Elevation`
+  (классы `elevation-N`), `ListItemCell`/`ListItemRow`, `Row`/`Col`.
+  * `navbar`, `toolbar`, `subnavbar`, `list`, `block`, `link`, `icon`, `badge`,
+    `button`, `page`, `view` переехали в **ядро** — отдельно не подключаются;
+  * сетка переписана на **CSS Grid** (`.grid` / `.grid-cols-N`), прежних
+    flex-классов `.row`/`.col` нет;
+  * `--f7-theme-color*` тема больше не задаёт — их обязан объявить проект
+    (это делает `src/css/app.less`).
+* Утилиты, компенсирующие удалённое, собраны в конце `src/css/app.less`
+  (`.elevation-3`, `.item-cell`, `.row-equal`).
+
+Полный список правок и подводных камней — в `firmware/docs/web-frontend.md` и
+в комментариях к `src/js/framework7-custom.js`, `src/css/framework7-custom.less`.
+
+### Вид списков и карточек по умолчанию
+
+Список `<List>` в 9-й версии по умолчанию рисуется **без рамок, фона и
+разделителей** — если нужен прежний вид, добавляйте `list-outline`,
+`list-strong`, `list-dividers` или `inset`.
 
 ## Связь с устройством
 
