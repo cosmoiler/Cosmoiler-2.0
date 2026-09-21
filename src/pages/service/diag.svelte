@@ -22,10 +22,20 @@
 
 <!-- Диагностика -->
 <List accordionList>
-  <ListItem accordionItem class={`settings-main__list-item`}>
-    <div slot='title' class={`list-input__label list-input__label-text_color`}>
+  <!-- ! Framework7 9: аккордеон собран из AccordionItem / AccordionToggle /
+       AccordionContent. Старая схема «ListItem accordionItem + AccordionContent
+       внутри» в 9-й версии НЕ работает: ListItem подставляет {@render children}
+       только когда нет swipeout/accordionItem, то есть вложенный контент просто
+       отбрасывается. Заголовок передаётся сниппетом в проп title. -->
+  {#snippet diagTitle1()}
+    <div class={`list-input__label list-input__label-text_color`}>
       <span>{$t('service.diag.acord.title1')}</span>
     </div>
+  {/snippet}
+  <AccordionItem>
+    <AccordionToggle>
+      <ListItem link class={`settings-main__list-item`} title={diagTitle1} />
+    </AccordionToggle>
     <AccordionContent>
       <Block>
         <p><b>Отсутствует Wi-Fi блока.</b></p>
@@ -59,7 +69,10 @@
       </Block>
       {/if}
     </AccordionContent>
-  </ListItem>
+  </AccordionItem>
+  <!-- ! ВНИМАНИЕ: блоки ниже сознательно отключены через {#if false} и остались
+       в старом синтаксисе Framework7 6 (slot='title' + ListItem accordionItem).
+       При включении их нужно перевести на сниппеты так же, как элемент выше. -->
   {#if false}
   <ListItem accordionItem class={`settings-main__list-item`}>
     <div slot='title' class={`list-input__label list-input__label-text_color`}>
@@ -87,7 +100,7 @@
         <p>Для обновления ПО блока управления выполните следующие действия:</p>
         <p>1. Включите передачу данных (интернет) </p>
         <p>2. Скачайте и сохраните в смартфоне файл(ы) прошивки. </p>
-        <Button outline lager on:click = {downloadFW}>Скачать файлы</Button>
+        <Button outline lager onClick={downloadFW}>Скачать файлы</Button>
         <p>3. Подключитесь к блоку управления </p>
         <p>4. В разделе <Link href="/service/update/"><b>Обновление</b></Link> выполните следующие действия: </p>
         <p>- выберете сохраненный файл spiffs_ESP32@*.img (при наличии) и нажмите кнопку "Обновить"</p>
@@ -120,6 +133,8 @@
       ListItem,
       Link,
       Button,
+      AccordionItem,
+      AccordionToggle,
       AccordionContent,
       useStore
     } from 'framework7-svelte';

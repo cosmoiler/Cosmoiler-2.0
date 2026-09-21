@@ -1,7 +1,7 @@
 <Page
   name="trippresets"
   class={`page`}
-  on:pageAfterOut={pageAfteOut} >
+  onPageAfterOut={pageAfteOut} >
 
   <Navbar title={$t('settings.presets.title')} backLink="Back" />
 

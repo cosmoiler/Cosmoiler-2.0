@@ -1,8 +1,8 @@
 <Page
   name="telemetry"
   class={`page`}
-  on:pageTabShow={pageTabShow}
-  on:pageTabHide={pageTabHide}>
+  onPageTabShow={pageTabShow}
+  onPageTabHide={pageTabHide}>
 
   <Navbar title={$t('home.telemetry')} />
   <!-- <Button on:click={() => { store.state.connect =  !store.state.connect}}>Connect = {store.state.connect}</Button> -->

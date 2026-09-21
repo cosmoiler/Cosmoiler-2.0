@@ -4,6 +4,11 @@ import Framework7 from './framework7-custom.js';
 // Import Framework7-Svelte Plugin
 import Framework7Svelte from 'framework7-svelte';
 
+// ! Svelte 5: монтирование выполняется функцией mount(), конструктор
+// `new App({ target })` из 4-й версии больше не поддерживается и падал с
+// component_api_invalid_new.
+import { mount } from 'svelte';
+
 // Import Framework7 Styles
 import '../css/framework7-custom.less';
 
@@ -26,6 +31,8 @@ setupi18n();
 // src/js/sw.js).
 
 // Mount Svelte App
-const app = new App({
+const app = mount(App, {
   target: document.getElementById('app'),
 });
+
+export default app;

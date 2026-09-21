@@ -1,123 +1,55 @@
 
-import Framework7, { request, utils, getDevice, createStore } from 'framework7/lite';
-import Appbar from 'framework7/components/appbar';
+/**
+ * Экземпляр Framework7 с набором компонентов Cosmoiler.
+ *
+ * Здесь регистрируются ТОЛЬКО компоненты с JS-поведением. Разметочные
+ * компоненты (page, navbar, toolbar, subnavbar, list, list-item, block, card,
+ * link, icon, badge, button) регистрации не требуют: в 9-й версии они часть
+ * ядра, а их стили подключает css/framework7-custom.less.
+ *
+ * ! ЧТО ИЗМЕНИЛОСЬ ОТНОСИТЕЛЬНО Framework7 6:
+ *   - `appbar` УДАЛЁН (его роль давно выполняет navbar) — соответствующий
+ *     `import 'framework7/components/appbar'` в 9-й версии отсутствует в
+ *     package.exports и валит сборку;
+ *   - `elevation` УДАЛЁН вместе с классами elevation-N;
+ *   - добавлен `gauge` — на нём держатся карточки телеметрии;
+ *   - из `framework7/lite` пропал экспорт `request` (в 9-й версии его нет
+ *     вовсе — обмен с устройством идёт через src/js/http.js).
+ */
+import Framework7, { utils, getDevice, createStore } from 'framework7/lite';
+import Accordion from 'framework7/components/accordion';
+import Card from 'framework7/components/card';
 import Dialog from 'framework7/components/dialog';
-//import Popup from 'framework7/components/popup';
-//import LoginScreen from 'framework7/components/login-screen';
-//import Popover from 'framework7/components/popover';
-//import Actions from 'framework7/components/actions';
-//import Sheet from 'framework7/components/sheet';
-//import Toast from 'framework7/components/toast';
+import Gauge from 'framework7/components/gauge';
+import Grid from 'framework7/components/grid';
+import Input from 'framework7/components/input';
 import Preloader from 'framework7/components/preloader';
 import Progressbar from 'framework7/components/progressbar';
-//import Sortable from 'framework7/components/sortable';
-//import Swipeout from 'framework7/components/swipeout';
-import Accordion from 'framework7/components/accordion';
-//import ContactsList from 'framework7/components/contacts-list';
-//import VirtualList from 'framework7/components/virtual-list';
-//import ListIndex from 'framework7/components/list-index';
-//import Timeline from 'framework7/components/timeline';
-import Tabs from 'framework7/components/tabs';
-//import Panel from 'framework7/components/panel';
-import Card from 'framework7/components/card';
-//import Chip from 'framework7/components/chip';
-//import Form from 'framework7/components/form';
-import Input from 'framework7/components/input';
-//import Checkbox from 'framework7/components/checkbox';
-import Radio from 'framework7/components/radio';
-import Toggle from 'framework7/components/toggle';
-import Range from 'framework7/components/range';
-//import Stepper from 'framework7/components/stepper';
-//import SmartSelect from 'framework7/components/smart-select';
-import Grid from 'framework7/components/grid';
-//import Calendar from 'framework7/components/calendar';
-//import Picker from 'framework7/components/picker';
-//import InfiniteScroll from 'framework7/components/infinite-scroll';
 import PullToRefresh from 'framework7/components/pull-to-refresh';
-//import Lazy from 'framework7/components/lazy';
-//import DataTable from 'framework7/components/data-table';
-//import Fab from 'framework7/components/fab';
-//import Searchbar from 'framework7/components/searchbar';
-//import Messages from 'framework7/components/messages';
-//import Messagebar from 'framework7/components/messagebar';
-//import Swiper from 'framework7/components/swiper';
-//import PhotoBrowser from 'framework7/components/photo-browser';
-//import Notification from 'framework7/components/notification';
-//import Autocomplete from 'framework7/components/autocomplete';
-//import Tooltip from 'framework7/components/tooltip';
+import Radio from 'framework7/components/radio';
+import Range from 'framework7/components/range';
 import Skeleton from 'framework7/components/skeleton';
-//import Menu from 'framework7/components/menu';
-//import ColorPicker from 'framework7/components/color-picker';
-//import Treeview from 'framework7/components/treeview';
-//import TextEditor from 'framework7/components/text-editor';
-import Elevation from 'framework7/components/elevation';
+import Tabs from 'framework7/components/tabs';
+import Toggle from 'framework7/components/toggle';
 import Typography from 'framework7/components/typography';
 
 Framework7.use([
-  Appbar,
-  Dialog,
-  Grid,
-  Preloader,
   Accordion,
+  Card,
+  Dialog,
+  Gauge,
+  Grid,
+  Input,
+  Preloader,
+  Progressbar,
+  PullToRefresh,
+  Radio,
+  Range,
+  Skeleton,
   Tabs,
   Toggle,
-  Range,
-  Card,
-  PullToRefresh,
-  Input,
-  Skeleton,
-  Radio,
-  //Popup,
- // LoginScreen,
- // Popover,
-  //Actions,
-  //Sheet,
-  //Toast,
-
-  Progressbar,
-  //Sortable,
-  //Swipeout,
-
- // ContactsList,
- // VirtualList,
-  //ListIndex,
-  //Timeline,
-
-  //Panel,
-
- // Chip,
-  //Form,
-
-  //Checkbox,
-
-
-
-  //Stepper,
- // SmartSelect,
-
- // Calendar,
-  //Picker,
- // InfiniteScroll,
-
-  //Lazy,
-  //DataTable,
- // Fab,
- // Searchbar,
- // Messages,
- // Messagebar,
-  //Swiper,
- // PhotoBrowser,
-  //Notification,
-  //Autocomplete,
-  //Tooltip,
-
-  //Menu,
- // ColorPicker,
- // Treeview,
- // TextEditor,
-  Elevation,
-  Typography
+  Typography,
 ]);
 
 export default Framework7;
-export { request, utils, getDevice, createStore };
+export { utils, getDevice, createStore };

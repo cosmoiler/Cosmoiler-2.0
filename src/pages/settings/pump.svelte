@@ -1,8 +1,8 @@
 <Page
   name="pump"
   class={`page`}
-  on:pageBeforeIn={pageBeforeIn}
-  on:pageAfterOut={pageAfterOut}
+  onPageBeforeIn={pageBeforeIn}
+  onPageAfterOut={pageAfterOut}
   >
     <Navbar title={$t('settings.pump.title')} backLink="Back" />
 
@@ -17,7 +17,7 @@
           value="std"
           title={$t('settings.pump.type.std')}
           checked={fStd}
-          on:change={() => {
+          onChange={() => {
             tmpPump.usr = false
             store.dispatch('sendPump', tmpPump);
             //mapSettings.set("sensor", tmpOdometer.sensor);
@@ -31,7 +31,7 @@
           value="usr"
           title={$t('settings.pump.type.nonstd')}
           checked={fUsr}
-          on:change={() => {
+          onChange={() => {
             tmpPump.usr = true
             store.dispatch('sendPump', tmpPump);
             //mapSettings.set("sensor", tmpOdometer.sensor);
@@ -59,7 +59,7 @@
             value="atf"
             title={$t('settings.pump.std.viscosity.liquid')}
             checked={is_atf}
-            on:change={() => {
+            onChange={() => {
               Oil = typesOil.ATF
              // T = 500
               localStorage.setItem('oil', Oil)
@@ -72,7 +72,7 @@
             value="tad17"
             title={$t('settings.pump.std.viscosity.thick')}
             checked={is_tad17}
-            on:change={() => {
+            onChange={() => {
               Oil = typesOil.TAD
              // T = 2000
               localStorage.setItem('oil', Oil)

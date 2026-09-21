@@ -2,52 +2,52 @@
   name="wifi"
   class={`page`}
   pageContent={true}
-  on:pageAfterOut={pageAfteOut}>
+  onPageAfterOut={pageAfteOut}>
 
   <Navbar title={$t('service.wifi.title')} backLink="Back" />
 
   <BlockTitle><span>{$t('service.wifi.ap.title')}</span></BlockTitle>
   <List class={`settings-main__list-item`}>
+    {#snippet ssidLabel()}<div class="list-input__label list-input__label-text_color">SSID</div>{/snippet}
     <ListInput class={`settings-main__list-item`}
       type="text"
       placeholder={$t('service.wifi.ap.ssid.plchldr')}
       bind:value={system.ap.ssid}
+      label={ssidLabel}
       clearButton
-    >
-      <div slot='label' class="list-input__label list-input__label-text_color">SSID</div>
-    </ListInput>
+    />
+    {#snippet pswLabel()}<div class="list-input__label list-input__label-text_color">{$t('service.wifi.ap.psw.title')}</div>{/snippet}
     <ListInput class={`settings-main__list-item`}
       type="password"
       placeholder={$t('service.wifi.ap.psw.plchldr')}
       bind:value={system.ap.psw}
+      label={pswLabel}
       clearButton
-    >
-      <div slot='label' class="list-input__label list-input__label-text_color">{$t('service.wifi.ap.psw.title')}</div>
-    </ListInput>
-    <ListItem class={`settings-main__list-item`}>
-      <div slot='title' class="list-input__label list-input__label-text_color">{$t('service.wifi.ap.alwson.title')}</div>
-      <span slot="after">
-        <Toggle bind:checked={system.ap.pwr}  />
-      </span>
-    </ListItem>
+    />
+    {#snippet alwTitle()}<div class="list-input__label list-input__label-text_color">{$t('service.wifi.ap.alwson.title')}</div>{/snippet}
+    {#snippet alwAfter()}<Toggle bind:checked={system.ap.pwr} />{/snippet}
+    <ListItem class={`settings-main__list-item`}
+      title={alwTitle}
+      after={alwAfter}
+    />
   </List>
 
   {#if false}
   <BlockTitle><span>{$t('service.wifi.sta.title')}</span></BlockTitle>
   <List>
+    {#snippet staSsidLabel()}<div class="list-input__label list-input__label-text_color">SSID</div>{/snippet}
     <ListInput class={`settings-main__list-item`}
       type="text"
       placeholder="Введите имя"
       bind:value={system.sta.ssid}
-    >
-      <div slot='label' class="list-input__label list-input__label-text_color">SSID</div>
-    </ListInput>
+      label={staSsidLabel}
+    />
+    {#snippet staPswLabel()}<div class="list-input__label list-input__label-text_color">Пароль</div>{/snippet}
     <ListInput class={`settings-main__list-item`}
       type="password"
       placeholder="Введите пароль"
-      bind:value={system.sta.psw}>
-      <div slot='label' class="list-input__label list-input__label-text_color">Пароль</div>
-    </ListInput>
+      bind:value={system.sta.psw}
+      label={staPswLabel} />
   </List>
   {/if}
 </Page>

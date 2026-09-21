@@ -9,7 +9,7 @@
   {/if}
   <BlockTitle ><span>{$t('service.update.fw.title2')}</span></BlockTitle>
   <Block strong style="background-color: var(--f7-theme-color-bg-tint-color)">
-      <Col>
+      <div>
         <input
           type='file'
           accept='.bin'
@@ -17,16 +17,16 @@
           bind:this={browseInput}
           class={`hidden`}
           />
-        <Button outline lager on:click={selectFile}>{nameFile}</Button>
-      </Col>
-      <Col>
-        <Button disabled={!files | !f_connected} fill on:click={update} class={`margin-top__20px`}>{$t('button.update')}</Button>
-      </Col>
+        <Button outline lager onClick={selectFile}>{nameFile}</Button>
+      </div>
+      <div>
+        <Button disabled={!files | !f_connected} fill onClick={update} class={`margin-top__20px`}>{$t('button.update')}</Button>
+      </div>
   </Block>
 
   <BlockTitle ><span>{$t('service.update.cnfg.title')}</span></BlockTitle>
   <Block strong style="background-color: var(--f7-theme-color-bg-tint-color)">
-    <Button disabled={!f_connected} fill small on:click={clickReset}>{$t('service.update.cnfg.button.title')}</Button>
+    <Button disabled={!f_connected} fill small onClick={clickReset}>{$t('service.update.cnfg.button.title')}</Button>
   </Block>
 
 </Page>
@@ -38,7 +38,9 @@
       Block,
       BlockTitle,
       Button,
-      Col,
+      // Col удалён в Framework7 9 (сетка переписана на CSS Grid).
+      // Здесь он всё равно ничего не делал: <Block> не flex-контейнер, поэтому
+      // вложенные «колонки» и раньше шли друг под другом. Заменён на <div>.
      // Progressbar,
       useStore
     } from 'framework7-svelte';

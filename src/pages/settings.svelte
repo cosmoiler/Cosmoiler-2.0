@@ -21,34 +21,36 @@
       <Tab id="tab-trip" tabActive >
         <List>
           {#each items_odo.slice(0,2) as {link, title, icon, size, footer}}
-            <ListItem link={link} title={title} class={`settings-main__list-item`}>
-              <div slot='media'><Icon icon={icon} style="font-size: {size}px" /></div>
-              <div slot='footer'>{footer}</div>
-            </ListItem>
+            <!-- ! Сниппеты объявлены внутри {#each}: они захватывают переменные
+                 цикла, поэтому для каждого элемента получается своё содержимое.
+                 Это замена slot="media" / slot="footer" из Framework7 6. -->
+            {#snippet mediaSlot()}<Icon icon={icon} style="font-size: {size}px" />{/snippet}
+            {#snippet footerSlot()}{footer}{/snippet}
+            <ListItem link={link} {title} class={`settings-main__list-item`}
+              media={mediaSlot} footer={footerSlot} />
           {/each}
-          <ListItem title={items_odo[2].title} link={items_odo[2].link} class={`settings-main__list-item`}>
-            <div slot='media'><Icon icon={items_odo[2].icon} style="font-size: {items_odo[2].size}px" /></div>
-            <div slot='after'><span>{gnss}</span></div>
-            <!-- <div slot='after'><span>GPS</span></div> -->
-          </ListItem>
+          {#snippet odoMediaSlot()}<Icon icon={items_odo[2].icon} style="font-size: {items_odo[2].size}px" />{/snippet}
+          {#snippet odoAfterSlot()}<span>{gnss}</span>{/snippet}
+          <ListItem title={items_odo[2].title} link={items_odo[2].link} class={`settings-main__list-item`}
+            media={odoMediaSlot} after={odoAfterSlot} />
         </List>
       </Tab>
       <Tab id="tab-time" >
         <List>
           {#each items_timer as {link, title, icon, size, footer}}
-            <ListItem link={link} title={title} class={`settings-main__list-item`}>
-              <div slot='media'><Icon icon={icon} style="font-size: {size}px" /></div>
-              <div slot='footer'>{footer}</div>
-            </ListItem>
+            {#snippet mediaSlot()}<Icon icon={icon} style="font-size: {size}px" />{/snippet}
+            {#snippet footerSlot()}{footer}{/snippet}
+            <ListItem link={link} {title} class={`settings-main__list-item`}
+              media={mediaSlot} footer={footerSlot} />
           {/each}
         </List>
       </Tab>
       <Tab id="tab-manual" >
         <List>
           {#each items_manual as {link, title, icon, size}}
-            <ListItem link={link} title={title} class={`settings-main__list-item`}>
-              <div slot='media'><Icon icon={icon} style="font-size: {size}px" /></div>
-            </ListItem>
+            {#snippet mediaSlot()}<Icon icon={icon} style="font-size: {size}px" />{/snippet}
+            <ListItem link={link} {title} class={`settings-main__list-item`}
+              media={mediaSlot} />
           {/each}
         </List>
       </Tab>

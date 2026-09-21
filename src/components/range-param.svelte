@@ -12,12 +12,12 @@
     <span style="color: var(--f7-theme-color-change-text)">{name_value}</span> -->
     {/if}
   </BlockTitle>
-  <List simpleList class='elevation-0'>
+  <List simpleList>
     <ListItem style="background-color: var(--f7-theme-color-bg-tint-color)">
-      <ListItemCell class="width-auto flex-shrink-0">
+      <div class="item-cell width-auto flex-shrink-0">
         <Icon icon={icon} style="font-size: 25px" />
-      </ListItemCell>
-      <ListItemCell class="flex-shrink-3">
+      </div>
+      <div class="item-cell flex-shrink-3">
         <Range class="range__color !range__margin-bottom"
         min={minValue}
         max={maxValue}
@@ -31,29 +31,32 @@
         formatScaleLabel={frmtScaleLabel}
         onRangeChange={rangeChange}
         />
-      </ListItemCell>
+      </div>
       {#if icon2}
-        <ListItemCell class="width-auto flex-shrink-0">
+        <div class="item-cell width-auto flex-shrink-0">
           <Icon icon={icon2} style="font-size: 25px" />
-        </ListItemCell>
+        </div>
       {/if}
       {#if toggle}
-        <ListItemCell class="width-auto flex-shrink-0">
-          <Toggle checked={toggleCheck} on:toggleChange={onCtrlToggle} />
-        </ListItemCell>
+        <div class="item-cell width-auto flex-shrink-0">
+          <Toggle checked={toggleCheck} onToggleChange={onCtrlToggle} />
+        </div>
       {/if}
-<!--       <ListItemCell class="width-auto flex-shrink-0">
+<!--       <div class="item-cell width-auto flex-shrink-0">
         <Stepper small bind:value={value} buttonsOnly min={minValue} max={maxValue} step={stepValue} style="color: var(--f7-theme-color-change-text)"></Stepper>
-      </ListItemCell> -->
+      </div> -->
 
     </ListItem>
   </List>
 
   <script>
+    // ! ListItemCell удалён в Framework7 9: в новом списке item-cell остался
+    // только LESS-миксином (.item-cell() = display:block + align-self:center),
+    // а класса такого нет. Разметка заменена на <div class="item-cell">,
+    // а сам класс объявлен в css/app.less с теми же свойствами.
     import {
     List,
     ListItem,
-    ListItemCell,
     BlockTitle,
     Range,
     Icon,

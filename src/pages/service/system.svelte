@@ -2,8 +2,8 @@
     name="system"
     class={`page`}
     pageContent={true}
-    on:pageBeforeIn={pageBeforeIn}
-    on:pageAfterOut={pageAfteOut} >
+    onPageBeforeIn={pageBeforeIn}
+    onPageAfterOut={pageAfteOut} >
 
     <Navbar title={$t('service.system.title')} backLink="Back" />
 
@@ -12,8 +12,8 @@
         <BlockTitle ><span>{$t('service.system.pumping.title')}</span></BlockTitle>
         <List >
             <ListItem style="background-color: var(--f7-theme-color-bg-tint-color)">
-                <ListItemCell class="width-auto flex-shrink-0 list-input__label list-input__label-text_color">{$t('service.system.pumping.text_toggle')}</ListItemCell>
-                <ListItemCell class="width-auto flex-shrink-4"><Toggle bind:checked={ctrlpump}  /></ListItemCell>
+                <div class="item-cell width-auto flex-shrink-0 list-input__label list-input__label-text_color">{$t('service.system.pumping.text_toggle')}</div>
+                <div class="item-cell width-auto flex-shrink-4"><Toggle bind:checked={ctrlpump}  /></div>
             </ListItem>
         </List>
 
@@ -38,11 +38,11 @@
         <List >
             <ListItem style="background-color: var(--f7-theme-color-bg-tint-color)">
               {#if !AItraining}
-                <ListItemCell class="width-auto flex-shrink-0 list-input__label list-input__label-text_color">{$t('service.system.onoff.text_toggle1')}</ListItemCell>
+                <div class="item-cell width-auto flex-shrink-0 list-input__label list-input__label-text_color">{$t('service.system.onoff.text_toggle1')}</div>
               {:else}
-                <ListItemCell class="width-auto flex-shrink-0 list-input__label list-input__label-text_color">{$t('service.system.onoff.text_toggle2')}</ListItemCell>
+                <div class="item-cell width-auto flex-shrink-0 list-input__label list-input__label-text_color">{$t('service.system.onoff.text_toggle2')}</div>
               {/if}
-                <ListItemCell class="width-auto flex-shrink-4"><Toggle bind:checked={AItraining} bind:disabled={disabled}  /></ListItemCell>
+                <div class="item-cell width-auto flex-shrink-4"><Toggle bind:checked={AItraining} bind:disabled={disabled}  /></div>
             </ListItem>
         </List>
 
@@ -63,8 +63,8 @@
         </Block>
         <List >
             <ListItem style="background-color: var(--f7-theme-color-bg-tint-color)">
-                <ListItemCell class="width-auto flex-shrink-0 list-input__label list-input__label-text_color">{$t('service.system.fakegps.text_toggle')}</ListItemCell>
-                <ListItemCell class="width-auto flex-shrink-4"><Toggle bind:checked={tmpSystem.fake}  /></ListItemCell>
+                <div class="item-cell width-auto flex-shrink-0 list-input__label list-input__label-text_color">{$t('service.system.fakegps.text_toggle')}</div>
+                <div class="item-cell width-auto flex-shrink-4"><Toggle bind:checked={tmpSystem.fake}  /></div>
             </ListItem>
         </List>
         {/if}
@@ -79,7 +79,8 @@
       Block,
       List,
       ListItem,
-      ListItemCell,
+      // ! ListItemCell удалён в Framework7 9 (в списке остался только
+      // LESS-миксин .item-cell()); заменён на <div class="item-cell">.
       Navbar,
       BlockTitle,
       Toggle,

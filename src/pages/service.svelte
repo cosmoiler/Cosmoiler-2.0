@@ -1,3 +1,23 @@
+<!-- ! Framework7 9: вместо slot="title"/"subtitle"/"text"/"media" — сниппеты
+     с теми же именами, переданные пропсами (см. components/home-listitem.svelte). -->
+{#snippet serviceTitle()}
+  <div class="home-list-item__title home-list-item__title_up-color">
+    COSMOILER
+  </div>
+{/snippet}
+
+{#snippet serviceSubtitle()}
+  <div class="home-list-item__subtitle-text home-list-item__subtitle-text_color">FW: {ver.fw}   HW: {ver.hw}</div>
+{/snippet}
+
+{#snippet serviceText()}
+  <div class="home-list-item__text">S/N: {ver.sn}</div>
+{/snippet}
+
+{#snippet serviceMedia()}
+  <img src="icon.png" width="64" alt="" />
+{/snippet}
+
 <Page
   name="service"
   class={`page`}
@@ -10,17 +30,12 @@
   {/if}
 
   <List mediaList inset class='elevation-3' style="border-radius: 6px;">
-    <ListItem class={`settings-main__list-item`}>
-
-      <div slot='title' class="home-list-item__title home-list-item__title_up-color">
-        COSMOILER
-      </div>
-      <div slot="subtitle">
-        <div class="home-list-item__subtitle-text home-list-item__subtitle-text_color">FW: {ver.fw}   HW: {ver.hw}</div>
-      </div>
-      <div slot='text' class="home-list-item__text">S/N: {ver.sn}</div>
-      <img slot="media" src="icon.png" width="64" alt="" />
-    </ListItem>
+    <ListItem class={`settings-main__list-item`}
+      title={serviceTitle}
+      subtitle={serviceSubtitle}
+      text={serviceText}
+      media={serviceMedia}
+    />
   </List>
 
   <List>

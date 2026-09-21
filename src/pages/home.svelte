@@ -1,55 +1,77 @@
+<!--
+  ! Framework7 9: содержимое передаётся сниппетами-пропсами вместо slot="...",
+  ! а события — callback-пропсами вместо on:... (on:ptrRefresh → onPtrRefresh).
+  ! Старые slot="..." в 9-й версии молча игнорируются.
+-->
+
+{#snippet navbarTitle()}
+  <div class="navbar-title">
+    <span>Cosmoiler</span>
+    <span class="navbar-title__ver"></span>
+  </div>
+{/snippet}
+
+<!-- Заготовки строк «идёт загрузка»: содержимое статичное, поэтому сниппеты
+     объявлены один раз и передаются в каждый ListItem. -->
+{#snippet skTitle()}
+  <div class="home-list-item__title home-list-item__title_up-color">
+    <SkeletonBlock tag="div" width="80px" height="20px" borderRadius="8px" />
+  </div>
+{/snippet}
+
+{#snippet skSubtitle()}
+  <div class="home-list-item__text home-list-item__text_margin-03rem">
+    <SkeletonBlock tag="div" width="195px" height="14px" borderRadius="7px" />
+  </div>
+{/snippet}
+
+{#snippet skText()}
+  <div class="home-list-item__text home-list-item__text_margin-03rem">
+    <SkeletonBlock tag="div" width="250px" height="20px" borderRadius="10px" />
+  </div>
+{/snippet}
+
+{#snippet skMedia()}
+  <SkeletonBlock width="36px" height="36px" borderRadius="50%" />
+{/snippet}
+
+{#snippet skAfter()}
+  <SkeletonBlock tag="div" width="36px" height="18px" borderRadius="10px" />
+{/snippet}
+
 <Page
   name="home"
   class={`page`}
   ptr
-  on:ptrRefresh={loadMore}
-  on:pageTabShow={pageTabShow}>
+  onPtrRefresh={loadMore}
+  onPageTabShow={pageTabShow}>
 
   <!-- Top Navbar -->
-  <Navbar sliding={true}>
-    <div sliding slot="title" class="navbar-title">
-      <span>Cosmoiler</span>
-      <span class="navbar-title__ver"></span>
-    </div>
-  </Navbar>
+  <Navbar title={navbarTitle} />
 
   {#if connected}
     <BlockTitle style='background-color: var( --f7-theme-color-bg-color)'>{$t('home.selectmode')}</BlockTitle>
-    <!-- <Button on:click={() => { store.state.connect =  !store.state.connect}}>Connect = {store.state.connect}</Button> -->
   {:else}
     <BlockTitle class={`block-title-noconnection__text`} >{$t('home.noconnect')}</BlockTitle>
-    <!-- <Button on:click={() => { store.state.connect =  !store.state.connect}}>Connect = {store.state.connect}</Button> -->
   {/if}
 
   {#if !connected}
-  <!--  <div transition:fade="{{delay: 1, duration: 1}}"> -->
-    <div in:fade="{{delay: 300, duration: 300}}" out:fly="{{duration: 300}}">
+    <div in:fade={{ delay: 300, duration: 300 }} out:fly={{ duration: 300 }}>
       <List mediaList class={`skeleton-text skeleton-effect-wave`}>
         {#each [1,2] as n}
-          <ListItem class={`home-list-item`} >
-            <div slot='title' class="home-list-item__title home-list-item__title_up-color">
-              <SkeletonBlock tag="div" width="80px" height="20px" borderRadius="8px" />
-            </div>
-            <div slot="subtitle" class="home-list-item__text home-list-item__text_margin-03rem">
-              <SkeletonBlock tag="div" width="195px" height="14px" borderRadius="7px" />
-            </div>
-            <div slot='text' class="home-list-item__text home-list-item__text_margin-03rem">
-              <SkeletonBlock tag="div" width="250px" height="20px" borderRadius="10px" />
-            </div>
-            <div slot='media'>
-              <SkeletonBlock width="36px" height="36px" borderRadius="50%" />
-            </div>
-            <div slot="after">
-              <SkeletonBlock tag="div" width="36px" height="18px" borderRadius="10px" />
-            </div>
-          </ListItem>
+          <ListItem class={`home-list-item`}
+            title={skTitle}
+            subtitle={skSubtitle}
+            text={skText}
+            media={skMedia}
+            after={skAfter}
+          />
         {/each}
       </List>
     </div>
   {:else}
-    <!-- <div transition:fade="{{delay: 250, duration: 300}}"> -->
-    <div in:fade="{{delay: 300, duration: 300}}" out:fly="{{duration: 300}}">
-      <List mediaList class='elevation-0'>
+    <div in:fade={{ delay: 300, duration: 300 }} out:fly={{ duration: 300 }}>
+      <List mediaList>
           <ModeItem {...items[0]} />
           <ModeItem {...items[1]} />
       </List>

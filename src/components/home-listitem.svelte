@@ -1,52 +1,66 @@
+<!--
+  ! Framework7 9 перешёл на сниппеты Svelte 5: содержимое ListItem передаётся
+  ! НЕ через slot="title"/slot="media"/..., а пропсами-сниппетами с теми же
+  ! именами (title, subtitle, text, after, media). Старое slot="..." в 9-й версии
+  ! просто игнорируется — элемент списка рендерился ПУСТЫМ.
+  ! События тоже стали callback-пропсами: on:toggleChange → onToggleChange.
+-->
 
-<ListItem class={`home-list-item`} >
-    <div slot='title' class="home-list-item__title home-list-item__title_up-color">
-      {title}
-    </div>
-    <div slot="subtitle">
-      <div class="home-list-item__subtitle-text home-list-item__subtitle-text_color">{subtitle}</div>
-      <div >
-        {#if gnss}
-          <div transition:fade="{{delay: 500, duration: 600}}">
-            <!-- <Icon icon={gpsIcon} size=20 class={`home-media__icon2`}/> -->
-            <!-- <Badge class={`home-list-item__badge_color home-media__text-icon2`}>Модуль GPS активен</Badge> -->
-            <!-- <span class="home-media__text-icon2">Модуль GPS активен</span> -->
-          </div>
-        {/if}
-           <!-- <Badge color='green'>GPS</Badge> -->
-          <!--  <Icon icon="icon-gps" size="26px" class={`card-footer-tele__icon`}/> -->
-        <!-- <Chip text="активен" media="GPS" mediaBgColor="blue"  ></Chip> -->
-      </div>
-    </div>
-    <div slot='text' class="home-list-item__text home-list-item__text_margin-1rem">
-      <Row noGap>
-        {#each icons as {name, text}}
-        <Col>
+{#snippet titleSlot()}
+  <div class="home-list-item__title home-list-item__title_up-color">
+    {title}
+  </div>
+{/snippet}
+
+{#snippet subtitleSlot()}
+  <div class="home-list-item__subtitle-text home-list-item__subtitle-text_color">{subtitle}</div>
+  {#if gnss}
+    <div transition:fade={{ delay: 500, duration: 600 }}></div>
+  {/if}
+{/snippet}
+
+{#snippet textSlot()}
+  <div class="home-list-item__text home-list-item__text_margin-1rem">
+    <div class="row-equal">
+      {#each icons as {name, text}}
+        <div>
           <Icon icon={name} size="20px" class={`col-param__logo`}/>
           <span>{text}</span>
-        </Col>
-        {/each}
-      </Row>
-    </div>
-    <div slot="after">
-      <Toggle checked={toggleCheck} on:toggleChange={onSelectModeToggle} />
-    </div>
-    <div slot='media'>
-      {#if gnss}
-        <div >
-          <Icon icon={gpsIcon} size=25 class={`home-media__icon2`}/>
         </div>
-      {/if}
-      <div><Icon icon={titleIcon} size=36 /></div>
+      {/each}
     </div>
-</ListItem>
+  </div>
+{/snippet}
+
+{#snippet afterSlot()}
+  <Toggle checked={toggleCheck} onToggleChange={onSelectModeToggle} />
+{/snippet}
+
+{#snippet mediaSlot()}
+  {#if gnss}
+    <div>
+      <Icon icon={gpsIcon} size={25} class={`home-media__icon2`}/>
+    </div>
+  {/if}
+  <div><Icon icon={titleIcon} size={36} /></div>
+{/snippet}
+
+<ListItem class={`home-list-item`}
+  title={titleSlot}
+  subtitle={subtitleSlot}
+  text={textSlot}
+  after={afterSlot}
+  media={mediaSlot}
+/>
 
 <script>
+    // ! Row и Col удалены в Framework7 9: сетка переписана на CSS Grid
+    // (.grid / .grid-cols-N), а прежние flex-классы .row/.col исчезли вместе
+    // с Svelte-компонентами. Ряд равных колонок заменён на класс .row-equal
+    // (объявлен в css/app.less) — он сделан на CSS Grid, как и требует 9-я версия.
     import {
         Icon,
         ListItem,
-        Row,
-        Col,
         Toggle,
     } from 'framework7-svelte';
     import { fade } from 'svelte/transition';
@@ -60,13 +74,6 @@
     export let icons = undefined
     export let toggleCheck = false
     export let onSelectModeToggle = undefined
-
-    let visbl = true
-
-/*     setInterval(() => {
-      visbl = !visbl
-      console.log(visbl)
-    }, 1000) */
 
 
 </script>

@@ -7,9 +7,9 @@
     {#if gauge.length != 0}
     <CardContent padding={true}>
 
-      <Row>
+      <div class="row-equal">
 <!--         {#each gauge as {value, valueText, labelText, text}}
-            <Col class="text-align-center">
+            <div class="text-align-center">
                 <Gauge
                     type="semicircle"
                     value={value}
@@ -21,10 +21,10 @@
                     labelFontSize = "18"
                     labelTextColor=var(--f7-theme-color-change-text) />
                 <span style="color: #888888" >{text}</span>
-            </Col>
+            </div>
         {/each} -->
         {#each gauge as {value, valueText, labelText, text, units}}
-        <Col class="text-align-center">
+        <div class="text-align-center">
             <span style="color: #888888" >{text}</span>
             <Gauge
                 type="semicircle"
@@ -37,9 +37,9 @@
                 labelFontSize = "18"
                 labelTextColor=var(--f7-theme-color-change-text) />
             <span style="color: #888888" >{units}</span>
-        </Col>
+        </div>
         {/each}
-      </Row>
+      </div>
 
     </CardContent>
     {/if}
@@ -68,14 +68,14 @@
 {/if}
 
 <script>
+    // ! Row и Col удалены в Framework7 9 (сетка переписана на CSS Grid) —
+    // ряд равных колонок заменён классом .row-equal из css/app.less.
     import {
         Card,
         CardHeader,
         CardContent,
         CardFooter,
         Gauge,
-        Row,
-        Col,
         Icon
     } from 'framework7-svelte';
 

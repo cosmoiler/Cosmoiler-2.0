@@ -1,7 +1,7 @@
 <Page
     name="sensor"
     class={`page`}
-    on:pageAfterOut={pageAfterOut}>
+    onPageAfterOut={pageAfterOut}>
 
     <Navbar title={$t('settings.pump.title')} backLink="Back" />
 
@@ -15,7 +15,7 @@
         value="gps"
         title={$t('settings.sensor.gnss')}
         checked={fGPS}
-        on:change={() => {
+        onChange={() => {
             tmpOdometer.sensor.gnss = true
             //mapSettings.set("sensor", tmpOdometer.sensor);
             //log(mapSettings)
@@ -30,7 +30,7 @@
             value="imp"
             title={$t('settings.sensor.impulse')}
             checked={fIMP}
-            on:change={() => {
+            onChange={() => {
                 tmpOdometer.sensor.gnss = false
             }}
             class={`sensor__list-item`}>
@@ -49,7 +49,7 @@
         required
         bind:value={tmpOdometer.sensor.imp}
         clearButton
-        on:inputClear={clearImp}
+        onInputClear={clearImp}
         class={`sensor__list-item`}>
         </ListInput>
 <!-- Ширина -->
@@ -61,7 +61,7 @@
         clearButton
         validate
         bind:value={tmpOdometer.wheel.w}
-        on:change={() =>{
+        onChange={() =>{
             if (!tmpOdometer.sensor.gnss) mapSettings.set("wheel", tmpOdometer.wheel)
             store.dispatch('sendDistance', tmpOdometer)
         }}
@@ -72,7 +72,7 @@
         label={$t('settings.sensor.wheel.height')}
         type="select"
         bind:value={tmpOdometer.wheel.h}
-        on:change={() => {
+        onChange={() => {
             if (!tmpOdometer.sensor.gnss) mapSettings.set("wheel", tmpOdometer.wheel)
             store.dispatch('sendDistance', tmpOdometer)
         }}

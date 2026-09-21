@@ -1,64 +1,37 @@
 
 & {
+  // ! ВАЖНОЕ ОТЛИЧИЕ Framework7 9 ОТ 6-й ВЕРСИИ.
+  //
+  // В 6-й navbar, toolbar, subnavbar, list, block, link, icon, badge были
+  // НЕОБЯЗАТЕЛЬНЫМИ компонентами и подключались по отдельности, а appbar был
+  // самостоятельным компонентом. В 9-й всё это переехало в ядро (список
+  // импортов виден в конце framework7.less), а appbar УДАЛЁН — его роль давно
+  // выполняет navbar.
   @import url('../../node_modules/framework7/framework7.less');
-  @import url('../../node_modules/framework7/components/appbar/appbar.less');
-  @import url('../../node_modules/framework7/components/dialog/dialog.less');
-  //@import url('../../node_modules/framework7/components/popup/popup.less');
-  //@import url('../../node_modules/framework7/components/login-screen/login-screen.less');
-  //@import url('../../node_modules/framework7/components/popover/popover.less');
-  //@import url('../../node_modules/framework7/components/actions/actions.less');
-  //@import url('../../node_modules/framework7/components/sheet/sheet.less');
-  //@import url('../../node_modules/framework7/components/toast/toast.less');
-  @import url('../../node_modules/framework7/components/preloader/preloader.less');
-  //@import url('../../node_modules/framework7/components/progressbar/progressbar.less');
-  //@import url('../../node_modules/framework7/components/sortable/sortable.less');
-  // Swipeout убран: компонент закомментирован в framework7-custom.js — мёртвый CSS.
-  //@import url('../../node_modules/framework7/components/swipeout/swipeout.less');
+
+  // Необязательные компоненты — оставлены только используемые.
   @import url('../../node_modules/framework7/components/accordion/accordion.less');
-  //@import url('../../node_modules/framework7/components/contacts-list/contacts-list.less');
-  //@import url('../../node_modules/framework7/components/virtual-list/virtual-list.less');
-  //@import url('../../node_modules/framework7/components/list-index/list-index.less');
-  //@import url('../../node_modules/framework7/components/timeline/timeline.less');
-  @import url('../../node_modules/framework7/components/tabs/tabs.less');
-  //@import url('../../node_modules/framework7/components/panel/panel.less');
   @import url('../../node_modules/framework7/components/card/card.less');
-  //@import url('../../node_modules/framework7/components/chip/chip.less');
-  //@import url('../../node_modules/framework7/components/form/form.less');
-  @import url('../../node_modules/framework7/components/input/input.less');
-  //@import url('../../node_modules/framework7/components/checkbox/checkbox.less');
-  @import url('../../node_modules/framework7/components/radio/radio.less');
-  @import url('../../node_modules/framework7/components/toggle/toggle.less');
-  @import url('../../node_modules/framework7/components/range/range.less');
-  //@import url('../../node_modules/framework7/components/stepper/stepper.less');
-  //@import url('../../node_modules/framework7/components/smart-select/smart-select.less');
-  @import url('../../node_modules/framework7/components/grid/grid.less');
-  //@import url('../../node_modules/framework7/components/calendar/calendar.less');
-  //@import url('../../node_modules/framework7/components/picker/picker.less');
-  //@import url('../../node_modules/framework7/components/infinite-scroll/infinite-scroll.less');
-  @import url('../../node_modules/framework7/components/pull-to-refresh/pull-to-refresh.less');
-  //@import url('../../node_modules/framework7/components/lazy/lazy.less');
-  //@import url('../../node_modules/framework7/components/data-table/data-table.less');
-  //@import url('../../node_modules/framework7/components/fab/fab.less');
-  //@import url('../../node_modules/framework7/components/searchbar/searchbar.less');
-  //@import url('../../node_modules/framework7/components/messages/messages.less');
-  //@import url('../../node_modules/framework7/components/messagebar/messagebar.less');
-  // Swiper убран: компонент не зарегистрирован в framework7-custom.js и разметки
-  // .swiper в проекте нет — это был мёртвый CSS.
-  //@import url('../../node_modules/framework7/components/swiper/swiper.less');
-  //@import url('../../node_modules/framework7/components/photo-browser/photo-browser.less');
-  //@import url('../../node_modules/framework7/components/notification/notification.less');
-  //@import url('../../node_modules/framework7/components/autocomplete/autocomplete.less');
-  //@import url('../../node_modules/framework7/components/tooltip/tooltip.less');
+  @import url('../../node_modules/framework7/components/dialog/dialog.less');
   @import url('../../node_modules/framework7/components/gauge/gauge.less');
+  @import url('../../node_modules/framework7/components/grid/grid.less');
+  @import url('../../node_modules/framework7/components/input/input.less');
+  @import url('../../node_modules/framework7/components/preloader/preloader.less');
+  @import url('../../node_modules/framework7/components/pull-to-refresh/pull-to-refresh.less');
+  @import url('../../node_modules/framework7/components/radio/radio.less');
+  @import url('../../node_modules/framework7/components/range/range.less');
   @import url('../../node_modules/framework7/components/skeleton/skeleton.less');
-  //@import url('../../node_modules/framework7/components/menu/menu.less');
-  //@import url('../../node_modules/framework7/components/color-picker/color-picker.less');
-  //@import url('../../node_modules/framework7/components/treeview/treeview.less');
-  //@import url('../../node_modules/framework7/components/text-editor/text-editor.less');
-  //@import url('../../node_modules/framework7/components/area-chart/area-chart.less');
-  //@import url('../../node_modules/framework7/components/pie-chart/pie-chart.less');
-  @import url('../../node_modules/framework7/components/elevation/elevation.less');
+  @import url('../../node_modules/framework7/components/tabs/tabs.less');
+  @import url('../../node_modules/framework7/components/toggle/toggle.less');
   @import url('../../node_modules/framework7/components/typography/typography.less');
+
+  // ! elevation.less УДАЛЁН вместе с компонентом Elevation и классами
+  // elevation-N. Использовавшийся у нас .elevation-3 объявлен заново в app.less
+  // как собственный утилитарный класс — иначе карточка телеметрии и список на
+  // странице «Сервис» потеряли бы тень.
+  //
+  // progressbar.less как и раньше не подключён: компонент Progressbar
+  // регистрируется в framework7-custom.js, но в разметке не используется.
 
   @includeIosTheme: true;
   @includeMdTheme: true;

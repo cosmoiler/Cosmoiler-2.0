@@ -37,12 +37,11 @@
   --f7-sheet-border-color: transparent;
   --f7-tabbar-link-active-border-color: #fff;
 }
-.appbar,
+/* Класс .appbar убран: компонент Appbar удалён в Framework7 9 (его роль
+ * выполняет navbar), а calendar-* в проекте не используется. */
 .navbar,
 .toolbar,
-.subnavbar,
-.calendar-header,
-.calendar-footer {
+.subnavbar {
   --f7-touch-ripple-color: var(--f7-touch-ripple-white);
   --f7-link-highlight-color: var(--f7-link-highlight-white);
   --f7-link-touch-ripple-color: var(--f7-touch-ripple-white);
@@ -219,6 +218,49 @@
 .block-title-text_settings {
   font-size: 18px;
 }
+
+/* ===================================================================
+ * ! Утилиты, заменяющие API, удалённый в Framework7 9.
+ *
+ * Собраны в одном месте намеренно: это не «дизайн проекта», а компенсация
+ * изменений фреймворка. При будущей ревизии вёрстки их можно выбросить,
+ * переписав макеты на штатные средства F7 9.
+ * =================================================================== */
+
+/* ! Компонент Elevation удалён вместе с классами elevation-N.
+ * .elevation-3 использовался на карточке телеметрии (tele-card.svelte) и на
+ * списке страницы «Сервис» (service.svelte). Тень воспроизведена ровно такой,
+ * какой её давала Material-тема F7, чтобы вид не поехал от смены фреймворка. */
+.elevation-3 {
+  box-shadow:
+    0 3px 1px -2px rgba(0, 0, 0, 0.2),
+    0 2px 2px 0 rgba(0, 0, 0, 0.14),
+    0 1px 5px 0 rgba(0, 0, 0, 0.12);
+}
+
+/* ! Компонент ListItemCell удалён: в списке F7 9 от него остался только
+ * LESS-миксин .item-cell() — то есть класса с таким именем больше нет.
+ * Возвращаем класс с теми же свойствами (см. components/list/list.less). */
+.item-cell {
+  display: block;
+  align-self: center;
+  box-sizing: border-box;
+}
+
+/* ! Сетка F7 9 переписана на CSS Grid (.grid / .grid-cols-N), а прежние
+ * flex-классы .row/.col вместе с Svelte-компонентами Row/Col удалены.
+ * В проекте сетка нужна ровно в двух местах — ряд равных колонок: иконки в
+ * элементе списка (home-listitem.svelte) и шкалы в карточке телеметрии
+ * (tele-card.svelte). Сделано средствами нового грида. */
+.row-equal {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  align-items: center;
+  box-sizing: border-box;
+  column-gap: var(--f7-grid-gap, 16px);
+}
+
 /* .color-deeporange {
   --f7-theme-color: #ff6b22;
   --f7-theme-color-rgb: 255, 107, 34;
