@@ -19,7 +19,7 @@
         <div class="home-list-item__subtitle-text home-list-item__subtitle-text_color">FW: {ver.fw}   HW: {ver.hw}</div>
       </div>
       <div slot='text' class="home-list-item__text">S/N: {ver.sn}</div>
-      <img slot="media" src="icon.png" width="64" />
+      <img slot="media" src="icon.png" width="64" alt="" />
     </ListItem>
   </List>
 

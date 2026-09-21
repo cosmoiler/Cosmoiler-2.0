@@ -26,8 +26,10 @@
   <script async src="pwacompat.min.js"></script>
 
 
-<link href="app.css" rel="stylesheet"></head>
+  <script type="module" crossorigin src="/app.js"></script>
+  <link rel="stylesheet" crossorigin href="/app.css">
+</head>
 <body>
-  <div id="app"></div>
-<script src="app.js"></script></body>
+  <div id="app"></div>  <!-- Точка входа. Раньше этот тег вставлял HtmlWebpackPlugin (inject: true);
+       теперь index.html сам является entry для Vite. --></body>
 </html>
