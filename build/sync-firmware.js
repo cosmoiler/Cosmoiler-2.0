@@ -8,8 +8,7 @@
  * лежит в main/Core/WebCore/WebAssets.cpp. Поэтому после каждой сборки www/
  * нужные файлы должны оказаться в main/Core/WebCore/Data/.
  *
- * Копируется ТОЛЬКО то, что создаёт сборка (webpack + HtmlWebpackPlugin +
- * CompressionPlugin):
+ * Копируется ТОЛЬКО то, что создаёт сборка (Vite + vite-plugin-compression):
  *     index.html, app.css.gz, app.js.gz, fontello.woff, icon.png
  *
  * Остальные вшитые файлы (favicon.ico, favicon16.png, favicon32.png,

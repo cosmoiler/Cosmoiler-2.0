@@ -1,108 +1,35 @@
-# Cosmoiler
+# Cosmoiler — веб-интерфейс
+
+Интерфейс смазчика Cosmoiler. Собирается в статику и **вшивается в прошивку ESP32**
+(файловой системы на устройстве нет), открывается в браузере телефона после подключения
+к точке доступа блока.
 
 TODO:
 1. Реализовать ограничение работы насоса не более 1 мин 30 сек.
 
-## Framework7 CLI Options
+## Стек
 
-Framework7 app created with following options:
+| Слой | Чем | Версия |
+|---|---|---|
+| Сборщик | **Vite** (`vite.config.mjs`) | 5.x |
+| UI-фреймворк | Framework7 + framework7-svelte | 6.3.17 |
+| Компоненты | Svelte | 4.x |
+| Локализация | svelte-i18n | 4.x |
+| Стили | Less (+ postcss-preset-env) | |
+| Сеть | нативный `fetch` (`src/js/http.js`) | |
 
-```
-{
-  "cwd": "d:\\Cosmoiler\\Prog\\Frontend\\aaaa",
-  "type": [
-    "web"
-  ],
-  "name": "My App aaa",
-  "framework": "svelte",
-  "template": "tabs",
-  "bundler": "webpack",
-  "cssPreProcessor": "less",
-  "theming": {
-    "customColor": false,
-    "color": "#007aff",
-    "darkTheme": false,
-    "iconFonts": true,
-    "fillBars": true
-  },
-  "customBuild": true,
-  "customBuildConfig": {
-    "rtl": false,
-    "darkTheme": true,
-    "lightTheme": true,
-    "themes": [
-      "ios",
-      "md",
-      "aurora"
-    ],
-    "components": [
-      "appbar",
-      "dialog",
-      "popup",
-      "login-screen",
-      "popover",
-      "actions",
-      "sheet",
-      "toast",
-      "preloader",
-      "progressbar",
-      "sortable",
-      "swipeout",
-      "accordion",
-      "contacts-list",
-      "virtual-list",
-      "list-index",
-      "timeline",
-      "tabs",
-      "panel",
-      "card",
-      "chip",
-      "form",
-      "input",
-      "checkbox",
-      "radio",
-      "toggle",
-      "range",
-      "stepper",
-      "smart-select",
-      "grid",
-      "calendar",
-      "picker",
-      "infinite-scroll",
-      "pull-to-refresh",
-      "lazy",
-      "data-table",
-      "fab",
-      "searchbar",
-      "messages",
-      "messagebar",
-      "swiper",
-      "photo-browser",
-      "notification",
-      "autocomplete",
-      "tooltip",
-      "gauge",
-      "skeleton",
-      "menu",
-      "color-picker",
-      "treeview",
-      "text-editor",
-      "area-chart",
-      "pie-chart",
-      "elevation",
-      "typography"
-    ]
-  },
-  "webpack": {
-    "developmentSourceMap": true,
-    "productionSourceMap": false,
-    "hashAssets": false,
-    "preserveAssetsPaths": false,
-    "inlineAssets": true
-  },
-  "pkg": "io.framework7.myapp"
-}
-```
+⚠️ История: до 21.09.2026 сборка была на webpack 5 + svelte-loader + babel, а Svelte и
+svelte-i18n — предыдущих мажорных версий. Конфиг Vite обязан быть **`.mjs`**: в
+`package.json` нет `type: module`, поэтому `.js`-конфиг грузится через `require`, а
+`@sveltejs/vite-plugin-svelte` существует только как ES-модуль.
+
+## Связь с устройством
+
+Интерфейс общается с ESP32 обычными HTTP-запросами (`http://192.168.4.1`) — **WebSocket
+не используется**, потому что WS-сервера в прошивке нет (см. `firmware/docs/web.md`).
+Телеметрия опрашивается запросами, а связь контролирует сторож времени последнего
+успешного ответа: `src/js/http.js` + блок «Контроль связи» в `src/js/store.js`.
+
 ## Update formware
 
 Загрузить файл самой последней версии в ручном режиме: `http://cosmoiler.ru/services/download?sn=&verfw=0[&verfs=0]`
@@ -115,37 +42,69 @@ Framework7 app created with following options:
 * 🔧 `sync` - скопировать результат сборки в `firmware/main/Core/WebCore/Data` (см. build/sync-firmware.js)
 * 🔧 `build:cosmoiler` - `build` + `sync`; штатное действие после правок интерфейса
 
-## WebPack
+## Сборка
 
-There is a webpack bundler setup. It compiles and bundles all "front-end" resources. You should work only with files located in `/src` folder. Webpack config located in `build/webpack.config.js`.
+Работать только с файлами из `src/`. Конфигурация — `vite.config.mjs`.
 
-Webpack has specific way of handling static assets (CSS files, images, audios). You can learn more about correct way of doing things on [official webpack documentation](https://webpack.js.org/guides/asset-management/).
+```
+npm run dev              # отладочный сервер http://localhost:8080
+npm run build            # production-сборка в www/
+npm run build:cosmoiler  # build + sync — штатное действие после правок интерфейса
+```
+
+Имена файлов в `www/` — часть контракта с прошивкой, менять их нельзя:
+
+| Файл | Откуда |
+|---|---|
+| `index.html` | `src/index.html` (entry) |
+| `app.js` / `app.js.gz` | `entryFileNames` в `vite.config.mjs` |
+| `app.css` / `app.css.gz` | `assetFileNames` в `vite.config.mjs` |
+| `fontello.woff`, `icon.png` | `publicDir` (= `src/static/img`) |
+
+Сжатие даёт `vite-plugin-compression`; исходные `.js`/`.css` остаются на месте
+(`deleteOriginFile: false`) — по ним видно результат сборки.
+
+⚠️ `vite build` **очищает `www/` целиком** (`emptyOutDir`), поэтому синхронизацию с прошивкой
+делать только ПОСЛЕ сборки — это и есть `npm run build:cosmoiler`.
+
+⚠️ `index.html` подключает скрипт **абсолютным** путём (`/app.js`). Это принципиально: при
+перезагрузке вложенного маршрута (`/settings/pump`) относительный путь давал бы запрос
+`/settings/app.js`, а прошивка на неизвестный путь отдаёт `index.html` — вместо скрипта приезжал
+бы HTML и приложение не стартовало.
+
+⚠️ В dev-режиме запросы к API устройства не работают: интерфейс открыт на `localhost`, а
+обращается к `192.168.4.1`. Адрес устройства можно подменить параметром в адресной строке:
+`http://localhost:8080/?ws=192.168.4.1` (см. `uri()` в `src/js/store.js`).
 
 ## Capacitor — удалён
 
 Capacitor в проекте больше не используется: интерфейс вшивается в прошивку и
 отдаётся прямо с ESP32, а открывается в браузере телефона (см.
-`docs/web-frontend.md`).
+`firmware/docs/web-frontend.md`).
 
 Удалены: зависимости `@capacitor/core|android|ios`, `@capacitor/cli`,
 `cordova-res`, файл `capacitor.config.json`, каталоги `android/`, `ios/`,
 `resources/` и `src/js/capacitor-app.js`. Заодно убран мёртвый plumbing в сборке:
-`process.env.TARGET` и ветка `isCordova` (`build/build.js`,
-`build/webpack.config.js`).
+`process.env.TARGET` и ветка `isCordova`.
 
-## Assets
+Исходники иконок для PWA остались: `favicon/`, `src/static/` (источники для
+вручную обновляемых файлов в `Data/`) и `web/img/icon.png`.
 
-Assets (icons, splash screens) source images located in `assets-src` folder. To generate your own icons and splash screen images, you will need to replace all assets in this directory with your own images (pay attention to image size and format), and run the following command in the project directory:
+## Сборка попадает в прошивку
 
-```
-framework7 assets
-```
+Прошивка берёт файлы из `firmware/main/Core/WebCore/Data` (они вшиваются в образ через
+`EMBED_FILES`). Копирует их `build/sync-firmware.js` (`npm run sync`), причём копирует ровно
+пять файлов, перечисленных выше, и **проверяет их содержимое** (gzip-магия, PNG/WOFF
+сигнатуры, наличие `app.js` в `index.html`) — чтобы в образ не уехал мусор.
 
-Or launch UI where you will be able to change icons and splash screens:
+Остальные вшитые файлы (`favicon.ico`, `favicon16/32.png`, `icon_192x192.png`,
+`icon_512x512.png`, `manifest.web`, `pwacompat.min.js`) сборкой **не создаются**: они лежат в
+`Data/` «как есть», скрипт их не трогает. Заменять их — вручную.
 
-```
-framework7 assets --ui
-```
+⚠️ `EMBED_FILES` разбирается **на этапе сборки прошивки**, поэтому после `npm run sync`
+образ надо пересобрать.
+
+Подробнее о связке проектов — `firmware/docs/web-frontend.md`.
 
 ## Documentation & Resources
 
