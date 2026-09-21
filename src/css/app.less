@@ -261,6 +261,16 @@
   column-gap: var(--f7-grid-gap, 16px);
 }
 
+/* ! Иконки таббара вынесены в <span class="icon ..."> вместо <i class="icon">
+ * (зачем — см. комментарий в pages/appview.svelte: в MD-теме 9-й версии
+ * подпись ::before у i.icon занята подложкой активной вкладки и затирает глиф).
+ * Поэтому правило ядра `.tabbar i.icon` про размер иконки их не подхватывает —
+ * дублируем размер здесь, через ту же переменную темы. */
+.tabbar .icon {
+  font-size: var(--f7-tabbar-icon-size);
+  line-height: 1;
+}
+
 /* .color-deeporange {
   --f7-theme-color: #ff6b22;
   --f7-theme-color-rgb: 255, 107, 34;

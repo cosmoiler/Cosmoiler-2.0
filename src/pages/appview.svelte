@@ -8,8 +8,26 @@
         class="safe-areas">
 
         <Toolbar tabbar labels bottom>
-          {#each itemsToolbar as {link, icon, text, active}}
-            <Link tabLink={link} icon={icon} text={text} tabLinkActive={active} />
+          {#each itemsToolbar as {link, icon, text, tabLinkActive}}
+            <!--
+              ! Иконка — свой <span>, а НЕ проп icon у Link.
+
+              В MD-теме Framework7 9 псевдоэлемент ::before у иконки таббара занят
+              подложкой-«пилюлей» активной вкладки:
+                  .md .tabbar i.icon::before { content: ''; ... opacity: 0 }
+                  .md .tabbar .tab-link-active i.icon::before { opacity: 1 }
+              Из-за content: '' глиф fontello ПРОПАДАЕТ (у этого селектора
+              специфичность выше, чем у .icon-rocket:before), а при выборе вкладки
+              видно саму «пилюлю» — это и был артефакт.
+
+              Перекрыть контент нельзя: код глифа у каждой иконки свой. Поэтому
+              иконка вынесена в <span class="icon ..."> — под селектор `i.icon`
+              он не попадает, а глиф рисуется правилом fontello как обычно.
+              Своё содержимое <Link> рендерит через {\@render children}.
+            -->
+            <Link tabLink={link} tabLinkActive={tabLinkActive} text={text} tabbarLabel={true}>
+              <span class={`icon ${icon}`}></span>
+            </Link>
           {/each}
         </Toolbar>
 
