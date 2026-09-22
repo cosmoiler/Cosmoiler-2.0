@@ -102,6 +102,33 @@ const COMMAND_TIMEOUT_MS = 8000;
  */
 const FORCE_CONNECTED = import.meta.env.DEV;
 
+/**
+ * ! ОТЛАДКА: подавление окон «Команда не выполнена!».
+ *
+ * Зачем: при отладке интерфейса устройство недоступно, поэтому КАЖДЫЙ запрос
+ * на запись отклоняется по таймауту и поверх страницы всплывает модальное окно.
+ * Деталь здесь в том, что окно САМО МЕШАЕТ отладке: оно перекрывает именно ту
+ * страницу, которую правят, а закрыть его некуда — при следующем действии оно
+ * всплывает снова, потому что повторный запрос настроек опять уходит на
+ * недоступное устройство.
+ *
+ * Гашение привязано к тому же `import.meta.env.DEV`, что и FORCE_CONNECTED:
+ * в собранном интерфейсе (в прошивке) окна работают как прежде, а сама ветка
+ * вырезается сборщиком. Проверка такая же: в www/app.js не должно остаться
+ * ни строки `Команда не выполнена` вне обработчиков.
+ *
+ * ! Перед выпуском: не отвязывать от import.meta.env.DEV.
+ *
+ * @param {string} message — текст окна, как он был бы показан пользователю.
+ */
+function commandFailed(message) {
+  if (FORCE_CONNECTED) {
+    log('DEBUG: окно «%s» подавлено (import.meta.env.DEV)', message);
+    return;
+  }
+  f7.dialog.alert(message, 'Cosmoiler');
+}
+
 /** Время последнего успешного ответа устройства (0 = ещё ни одного). */
 let lastOkAt = 0;
 /** Сколько зондов подряд не удалось. */
@@ -593,7 +620,7 @@ const store = createStore({
           log(res)
         })
         .catch((err) => {
-          f7.dialog.alert("Команда не выполнена!", "Cosmoiler")
+          commandFailed("Команда не выполнена!")
           deviceRequest('/settings/trip')
             .then((response) => { state.odometer = JSON.parse(response.data) })
         })
@@ -615,7 +642,7 @@ const store = createStore({
           log(res)
         })
         .catch((err) => {
-          f7.dialog.alert("Команда не выполнена!", "Cosmoiler")
+          commandFailed("Команда не выполнена!")
           // ! Было state.odometer: данные таймера затирали одометр.
           deviceRequest('/settings/time')
             .then((response) => { state.timer = JSON.parse(response.data) })
@@ -635,7 +662,7 @@ const store = createStore({
             log(res)
           })
           .catch((err) => {
-            f7.dialog.alert("Команда не выполнена!", "Cosmoiler")
+            commandFailed("Команда не выполнена!")
             // ! Было state.odometer: данные manual затирали одометр.
             deviceRequest('/settings/manual')
               .then((response) => { state.manual = JSON.parse(response.data) })
@@ -654,7 +681,7 @@ const store = createStore({
             log(res)
           })
           .catch((err) => {
-            f7.dialog.alert("Команда не выполнена!", "Cosmoiler")
+            commandFailed("Команда не выполнена!")
             // ! Было state.odometer: данные насоса затирали одометр.
             deviceRequest('/settings/pump')
               .then((response) => { state.pump = JSON.parse(response.data) })
@@ -674,7 +701,7 @@ const store = createStore({
             log(res)
           })
           .catch((err) => {
-            f7.dialog.alert("Команда не выполнена!", "Cosmoiler")
+            commandFailed("Команда не выполнена!")
             deviceRequest('/settings/mode')
               .then((response) => { state.mode = JSON.parse(response.data) })
               .catch((err) => { /* state.connect = false */ })
@@ -689,7 +716,7 @@ const store = createStore({
         log(res)
       })
       .catch((err) => {
-        f7.dialog.alert("Команда не выполнена!", "Cosmoiler")
+        commandFailed("Команда не выполнена!")
         // ! Было state.odometer: данные system затирали одометр.
         deviceRequest('/settings/system')
           .then((response) => { state.system = JSON.parse(response.data) })
@@ -716,7 +743,7 @@ const store = createStore({
       deviceRequest(rest_str)
       .catch(() => {
         // f7.alert не существует: было TypeError вместо сообщения пользователю.
-        f7.dialog.alert('Нет связи с блоком управеления. Команда не выполнена', 'Cosmoiler')
+        commandFailed('Нет связи с блоком управеления. Команда не выполнена')
       })
     },
 
@@ -726,21 +753,21 @@ const store = createStore({
         log(res)
       })
       .catch((err) => {
-        f7.dialog.alert("Команда не выполнена!", "Cosmoiler")
+        commandFailed("Команда не выполнена!")
       })
     },
 
     ctrlBright({state}, data) {
       deviceRequest('/settings/bright?v='+ data, { method: 'POST' })
         .catch(() => {
-          f7.dialog.alert('Нет связи с блоком управеления. Команда не выполнена.', 'Cosmoiler')
+          commandFailed('Нет связи с блоком управеления. Команда не выполнена.')
         })
     },
 
     fakeGPS({state}, data) {
       deviceRequest('/settings/fakegps?state='+(data>>0), { method: 'POST' })
       .catch(() => {
-        f7.dialog.alert('Нет связи с блоком управеления. Команда не выполнена.', 'Cosmoiler')
+        commandFailed('Нет связи с блоком управеления. Команда не выполнена.')
       })
     }
   },
