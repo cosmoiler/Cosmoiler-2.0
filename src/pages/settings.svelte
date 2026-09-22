@@ -1,21 +1,41 @@
-<Page
-  name="settings"
-  class={`page`}>
-
-
-
-{#if !connected}
-    <Navbar title={$t('home.settings')} />
-    <BlockTitle class={`block-title-noconnection__text`} >{$t('home.noconnect')}</BlockTitle>
-{:else}
-
-    <Navbar title={$t('home.settings')} />
-
+<!--
+  ! Верхний Toolbar вынесен в fixedContent страницы.
+  !
+  ! Framework7 9 отводит место под верхний тулбар селектором-«соседом»:
+  !     .toolbar-top ~ * { --f7-page-toolbar-top-offset: var(--f7-toolbar-height) }
+  ! то есть тулбар обязан лежать на уровне .page РЯДОМ с .page-content, а
+  ! отступ считает сам .page-content (page.less).
+  !
+  ! framework7-svelte 9 по умолчанию заворачивает всё содержимое <Page> в
+  ! .page-content, поэтому тулбар оказывался ВНУТРИ него: переменная
+  ! выставлялась элементам-соседям по содержимому, а не самому .page-content,
+  ! и первый элемент списка уезжал под тулбар (наложение 32px при высоте 56px).
+  ! В F7 6 этой проблемы не было — там структура страницы была другой.
+  !
+  ! fixedContent рендерится вне .page-content (page.svelte), поэтому селектор
+  ! `~ *` снова работает. Внутри — {#if}, чтобы при отсутствии связи тулбара
+  ! не было вовсе (его вкладки живут в ветке {:else}).
+-->
+{#snippet settingsToolbar()}
+  {#if connected}
     <Toolbar top tabbar >
       <Link tabLink="#tab-trip" tabLinkActive>{$t('settings.tab.odo.title')}</Link>
       <Link tabLink="#tab-time">{$t('settings.tab.tmr.title')}</Link>
       <Link tabLink="#tab-manual">{$t('settings.tab.man.title')}</Link>
     </Toolbar>
+  {/if}
+{/snippet}
+
+<Page
+  name="settings"
+  class={`page`}
+  fixedContent={settingsToolbar}>
+
+<Navbar title={$t('home.settings')} />
+
+{#if !connected}
+    <BlockTitle class={`block-title-noconnection__text`} >{$t('home.noconnect')}</BlockTitle>
+{:else}
 
     <Tabs >
       <Tab id="tab-trip" tabActive >
