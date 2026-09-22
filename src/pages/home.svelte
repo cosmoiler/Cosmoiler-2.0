@@ -131,8 +131,10 @@
          /*  {name: "icon-gps", text: ""}, */
         ],
         toggleCheck: fmodeOdometer,
-        onSelectModeToggle: (e) => {
-          fmodeOdometer = e.detail[0]
+        // ! F7 9: onToggleChange получает булево состояние, а не событие —
+        // было e.detail[0], и переключение режима молча не срабатывало.
+        onSelectModeToggle: (checked) => {
+          fmodeOdometer = checked
           if (fmodeOdometer) {
             fmodeTimer = false
           }
@@ -151,8 +153,8 @@
           {name: "icon-off-road", text: $t('home.setting.time', {values: {p: timer.presets[store.state.presets.OFFROAD].time}})},
         ],
         toggleCheck: fmodeTimer,
-        onSelectModeToggle: (e) => {
-          fmodeTimer = e.detail[0]
+        onSelectModeToggle: (checked) => {
+          fmodeTimer = checked
           if (fmodeTimer) {
             fmodeOdometer = false
           }

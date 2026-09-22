@@ -179,9 +179,11 @@
         },
         toggle: true,
         toggleCheck: fOnOffPump,
-        onCtrlToggle: (e) => {
-          log(e.detail[0])
-          fToggle = e.detail[0]
+        // ! F7 9: onToggleChange получает булево состояние, а не событие.
+        // Было e.detail[0] — TypeError и тумблер не работал.
+        onCtrlToggle: (checked) => {
+          log(checked)
+          fToggle = checked
         }
       },
       {
@@ -201,9 +203,9 @@
         },
         toggle: true,
         toggleCheck: fOnOffPump,
-        onCtrlToggle: (e) => {
-          log(e.detail[0])
-          fToggle = e.detail[0]
+        onCtrlToggle: (checked) => {
+          log(checked)
+          fToggle = checked
         }
       },],
       [{
@@ -225,9 +227,9 @@
         },
         toggle: true,
         toggleCheck: fOnOffPump,
-        onCtrlToggle: (e) => {
-          log(e.detail[0])
-          fToggle = e.detail[0]
+        onCtrlToggle: (checked) => {
+          log(checked)
+          fToggle = checked
         }
       },
       {
