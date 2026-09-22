@@ -3,7 +3,7 @@
     class={`page`}
     onPageAfterOut={pageAfterOut}>
 
-    <Navbar title={$t('settings.pump.title')} backLink="Back" />
+    <Navbar title={$t('settings.pump.title')} />
 
     <BlockTitle>{$t('settings.sensor.selectsensor')}</BlockTitle>
 

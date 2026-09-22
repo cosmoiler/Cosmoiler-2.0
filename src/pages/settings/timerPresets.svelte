@@ -2,7 +2,7 @@
   name="timepresets"
   class={`page`}>
 
-  <Navbar title={$t('settings.presets.title')} backLink="Back" />
+  <Navbar title={$t('settings.presets.title')} />
 
   <Toolbar top tabbar >
     <Link tabLink="#tab-city-time" tabLinkActive>{$t('settings.presets.city')}</Link>

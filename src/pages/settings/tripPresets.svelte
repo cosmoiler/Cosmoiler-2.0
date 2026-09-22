@@ -3,7 +3,7 @@
   class={`page`}
   onPageAfterOut={pageAfteOut} >
 
-  <Navbar title={$t('settings.presets.title')} backLink="Back" />
+  <Navbar title={$t('settings.presets.title')} />
 
   <Toolbar top tabbar >
     <Link tabLink="#tab-city" tabLinkActive>{$t('settings.presets.city')}</Link>

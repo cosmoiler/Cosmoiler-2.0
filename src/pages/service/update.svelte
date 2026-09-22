@@ -3,7 +3,7 @@
   class={`page`}
   pageContent={true}>
 
-  <Navbar title={$t('service.update.title')} backLink="Back" />
+  <Navbar title={$t('service.update.title')} />
   {#if !f_connected}
     <BlockTitle class={`block-title-noconnection__text`} >{$t('home.noconnect')}</BlockTitle>
   {/if}

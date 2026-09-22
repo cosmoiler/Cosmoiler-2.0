@@ -4,7 +4,7 @@
   pageContent={true}
   onPageAfterOut={pageAfteOut}>
 
-  <Navbar title={$t('service.wifi.title')} backLink="Back" />
+  <Navbar title={$t('service.wifi.title')} />
 
   <BlockTitle><span>{$t('service.wifi.ap.title')}</span></BlockTitle>
   <List class={`settings-main__list-item`}>

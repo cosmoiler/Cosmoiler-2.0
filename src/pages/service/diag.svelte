@@ -3,7 +3,7 @@
   class={`page`}
   pageContent={true}>
 
-  <Navbar title={$t('service.diag.title')} backLink="Back" />
+  <Navbar title={$t('service.diag.title')} />
 <!--
   <Navbar backLink="Back">
     <NavTitle>

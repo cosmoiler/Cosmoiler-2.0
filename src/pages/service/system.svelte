@@ -5,7 +5,7 @@
     onPageBeforeIn={pageBeforeIn}
     onPageAfterOut={pageAfteOut} >
 
-    <Navbar title={$t('service.system.title')} backLink="Back" />
+    <Navbar title={$t('service.system.title')} />
 
     {#if connected}
     <!-- Управление прокачкой системы -->

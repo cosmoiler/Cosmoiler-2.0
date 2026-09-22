@@ -4,7 +4,7 @@
   onPageBeforeIn={pageBeforeIn}
   onPageAfterOut={pageAfterOut}
   >
-    <Navbar title={$t('settings.pump.title')} backLink="Back" />
+    <Navbar title={$t('settings.pump.title')} />
 
 <!--     <BlockTitle>Настройка насоса под вязкость залитого масла</BlockTitle> -->
     <BlockTitle class='block-title-text_settings'>

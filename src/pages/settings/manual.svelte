@@ -2,7 +2,7 @@
   name="manual"
   class={`page`}>
 
-  <Navbar title={$t('settings.pump.title')} backLink="Back" />
+  <Navbar title={$t('settings.pump.title')} />
 
   {#each rangeValues as rangeValue}
       <Ranges {...rangeValue} />

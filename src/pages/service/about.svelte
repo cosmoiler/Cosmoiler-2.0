@@ -3,7 +3,7 @@
   class={`page`}
   pageContent={true}>
 
-  <Navbar title={$t('service.about')} backLink="Back" />
+  <Navbar title={$t('service.about')} />
 
   <Block strong class={`settings-main__list-item`}>
     <Block>
