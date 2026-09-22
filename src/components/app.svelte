@@ -18,7 +18,11 @@
   // Framework7 Parameters
   let f7params = {
     name: 'Cosmoiler 2.0', // App name
-    theme: 'auto', // Automatic theme detection
+    // ! ПРОБА: включена тема iOS.
+    // Штатное значение — 'auto': Framework7 сам выбирает iOS или Material по
+    // устройству. Здесь тема задана жёстко, чтобы посмотреть на iOS-оформление
+    // на десктопе. Вернуть — заменить 'ios' на 'auto'.
+    theme: 'ios',
 
     id: 'com.cosmoiler.app', // App bundle ID
     // App store
