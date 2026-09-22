@@ -17,12 +17,37 @@
       <div class="item-cell width-auto flex-shrink-0">
         <Icon icon={icon} style="font-size: 25px" />
       </div>
-      <div class="item-cell flex-shrink-3">
+      <!--
+        ! item-cell--grow — не украшение, а необходимость.
+        !
+        ! Раньше здесь стоял класс flex-shrink-3 (он есть и в F7 9), но он задаёт
+        ! только flex-shrink: 3 при flex-grow: 0. Ячейка без собственной ширины и
+        ! без роста сжималась в НОЛЬ, а .range-slider внутри имеет width: 100% —
+        ! шкала схлопывалась в вертикальную полоску у правого края строки
+        ! (замер до правки: ячейка 0x20, flex: 0 3 auto, width: 0px).
+        ! item-cell--grow объявлен в css/app.less и занимает остаток строки.
+        !
+        ! item-cell--scale добавляется только когда рисуется шкала с подписями:
+        ! именно там нужна увеличенная высота, иначе ползунок перекрывает подписи.
+        ! У шкалы без подписей (например, яркость светодиода) высота остаётся
+        ! штатной, и строки не растут без причины.
+      -->
+      <div class="item-cell item-cell--grow" class:item-cell--scale={scale}>
+        <!--
+          ! Проп color УБРАН. В F7 он добавляет класс вида color-<значение>, а у
+          ! нас туда передавалось имя CSS-класса (range__color) — получался
+          ! бессмысленный класс `color-range__color`. В 9-й версии MD-тема
+          ! навешивает токены Material 3 на всё, что подходит под селектор
+          ! `.md [class*='color-']`, и этот класс ловил правило
+          ! `--f7-range-bar-bg-color: var(--f7-md-secondary-container)` — уже НА
+          ! САМОМ элементе, где перебить его из :root невозможно. Незаполненная
+          ! часть шкалы становилась сиреневой.
+          ! Цвет шкалы и так задаёт наш класс range__color (css/app.less).
+        -->
         <Range class="range__color !range__margin-bottom"
         min={minValue}
         max={maxValue}
         label={true}
-        color=range__color
         step={stepValue}
         value={value}
         scale={scale}
