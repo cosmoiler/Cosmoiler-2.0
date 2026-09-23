@@ -12,7 +12,8 @@
     "dev": "vite",
     "build": "vite build",
     "sync": "node ./build/sync-firmware.js",
-    "build:cosmoiler": "npm run build && npm run sync"
+    "build:cosmoiler": "npm run build && npm run sync",
+    "legacy:check": "node ./build/check-legacy.mjs"
   },
   "browserslist": [
     "Android >= 7",
