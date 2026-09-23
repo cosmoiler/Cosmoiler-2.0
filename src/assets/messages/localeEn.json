@@ -135,6 +135,8 @@
     "telemetry.off.title": "Off",
     "telemetry.tmr.title": "Timer",
     "telemetry.tmr2.title": "TIMER (satellite search)",
+    "telemetry.pumping.title": "Priming",
+    "telemetry.training.title": "Training",
 
     "system.psw": "Password",
     "system.title": "System settings",

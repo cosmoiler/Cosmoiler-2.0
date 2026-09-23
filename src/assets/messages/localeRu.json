@@ -148,6 +148,8 @@
     "telemetry.off.title": "Выключено",
     "telemetry.tmr.title": "Таймер",
     "telemetry.tmr2.title": "ТАЙМЕР (поиск спутников)",
+    "telemetry.pumping.title": "Прокачка",
+    "telemetry.training.title": "Обучение",
 
     "system.psw": "Пароль",
     "system.title": "Системные настройки",

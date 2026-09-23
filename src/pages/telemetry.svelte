@@ -188,7 +188,48 @@ $:  dataCardTele = [
         }
       ]
     },
-    {},{},
+    { //#3 — ПРОКАЧКА: сколько раз включался насос и напряжение бортсети
+      //
+      // ! Приборов (gauge) здесь нет намеренно. Оба показателя — одиночные
+      // числа, а шкала у счётчика включений насоса бессмысленна: насос
+      // включается по команде «прокачать», а не по циклу, и предела у счётчика
+      // нет. Поэтому взят вид страницы OFF (#0) — один подвал с иконками;
+      // gauge: [] означает, что CardContent не рисуется вообще.
+      title: $t('telemetry.pumping.title').toUpperCase(),
+      gauge: [],
+      icons: [
+        { // насос: количество включений (params[2].v)
+          icon: "icon-pump",
+          value: telemetry.params[nameParams.PUMP].v
+        },
+        { // бортсеть: как на остальных страницах, с порогом тревоги
+          icon: "icon-accum",
+          value: voltage(telemetry.params[nameParams.VOLTAGE]) + $t("all.voltage"),
+          alarm: voltAlarm(voltage(telemetry.params[nameParams.VOLTAGE]))
+        }
+      ]
+    },
+    { //#4 — ОБУЧЕНИЕ: приём спутников и напряжение бортсети
+      //
+      // На этой странице важен именно приём ГНСС — по нему видно, есть ли смысл
+      // запускать обучение (см. service/system.svelte). Приём показываем только
+      // когда ГНСС включён в системных настройках: иначе «0 спутников» читалось
+      // бы как проблема приёма, хотя приёмник просто выключен.
+      title: $t('telemetry.training.title').toUpperCase(),
+      gauge: [],
+      icons: [
+        (gnssPresent.gps) ? {
+          icon: "icon-gps",
+          value: telemetry.params[nameParams.GPS].sat,
+          alarm: telemetry.params[nameParams.GPS].fake
+        } : null,
+        {
+          icon: "icon-accum",
+          value: voltage(telemetry.params[nameParams.VOLTAGE]) + $t("all.voltage"),
+          alarm: voltAlarm(voltage(telemetry.params[nameParams.VOLTAGE]))
+        }
+      ]
+    },
     { //#5
       title: $t('telemetry.tmr2.title'), // 5
       gauge: [
