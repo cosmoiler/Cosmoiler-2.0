@@ -22,8 +22,15 @@
 {#snippet textSlot()}
   <div class="home-list-item__text home-list-item__text_margin-1rem">
     <div class="row-equal">
+      <!--
+        ! Класс ячейки задаётся значком: param-col--city, param-col--way,
+        ! param-col--off-road. По нему css/app.less ставит колонку сетки.
+        ! Так значок оказывается ПОД таким же значком соседнего режима:
+        ! у пробега три группы (город, трасса, бездорожье), у таймера две —
+        ! без этого «бездорожье» таймера встало бы под «трассой» пробега.
+      -->
       {#each icons as {name, text}}
-        <div>
+        <div class={`param-col--${name.replace('icon-', '')}`}>
           <Icon icon={name} size="20px" class={`col-param__logo`}/>
           <span>{text}</span>
         </div>
