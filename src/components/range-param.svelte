@@ -15,7 +15,7 @@
   <List simpleList>
     <ListItem style="background-color: var(--f7-theme-color-bg-tint-color)">
       <div class="item-cell width-auto flex-shrink-0">
-        <Icon icon={icon} style="font-size: 25px" />
+        <Icon icon={icon} style="font-size: 30px" />
       </div>
       <!--
         ! item-cell--grow — не украшение, а необходимость.
@@ -59,7 +59,7 @@
       </div>
       {#if icon2}
         <div class="item-cell width-auto flex-shrink-0">
-          <Icon icon={icon2} style="font-size: 25px" />
+          <Icon icon={icon2} style="font-size: 30px" />
         </div>
       {/if}
       {#if toggle}
