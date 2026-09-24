@@ -70,6 +70,8 @@
     "settings.presets.odo.description": "Setting the distance between the oil supply to the chain.",
     "settings.presets.tmr.description": "Setting the time between oil supplies to the chain.",
 
+    "settings.manual.oilvolume": "Oil volume",
+
     "settings.sensor.title": "Sensor",
     "settings.sensor.selectsensor": "Select the sensor type",
     "settings.sensor.type": "Sensor type",

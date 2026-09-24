@@ -70,6 +70,8 @@
     "settings.presets.odo.description": "Установка расстояния между подачами масла на цепь.",
     "settings.presets.tmr.description": "Установка времени между подачами масла на цепь.",
 
+    "settings.manual.oilvolume": "Объем масла",
+
     "settings.sensor.title": "Датчик",
     "settings.sensor.selectsensor": "Выберите тип датчика",
     "settings.sensor.type": "Тип датчика",
@@ -184,13 +186,5 @@
     "service.about": "О приложении",
     "service.about.block1": "Приложение-клиент для задания параметров работы автоматического смазчика цепи \"Cosmoiler\".",
     "service.about.block2": "Для работы приложения-клиента и блока управления смазчика доступ в Интернет не требуется.",
-    "service.about.block3": "Более подробная информация доступна по адресу: ",
-
-
-
-
-
-
-    "settings.manual.oilvolume": "Объем масла"
-
+    "service.about.block3": "Более подробная информация доступна по адресу: "
 }
