@@ -148,7 +148,7 @@
     {
       link: '/settings/manual/',
       title: $t('settings.presets.title'),
-      footer: $t('settings.presets.odo.description'),
+      footer: $t('settings.presets.manual.description'),
       icon: 'icon-preset', size: 24},
   ]
 

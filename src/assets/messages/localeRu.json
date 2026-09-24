@@ -69,6 +69,7 @@
     "settings.presets.placeholder_Speed": "Максимальная скорость",
     "settings.presets.odo.description": "Установка расстояния между подачами масла на цепь.",
     "settings.presets.tmr.description": "Установка времени между подачами масла на цепь.",
+    "settings.presets.manual.description": "Установка параметров для ручного режима смазывания цепи. В этом режиме смазывание цепи осуществляется только при нажатии кнопки на блоке управления.",
 
     "settings.manual.oilvolume": "Объем масла",
 
