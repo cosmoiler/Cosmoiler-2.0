@@ -69,6 +69,7 @@
     "settings.presets.placeholder_Speed": "Maximum speed",
     "settings.presets.odo.description": "Setting the distance between the oil supply to the chain.",
     "settings.presets.tmr.description": "Setting the time between oil supplies to the chain.",
+    "settings.presets.manual.description": "Setting the parameters for the manual chain lubrication mode. In this mode the chain is lubricated only when the button on the control unit is pressed.",
 
     "settings.manual.oilvolume": "Oil volume",
 
