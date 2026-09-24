@@ -135,7 +135,7 @@
   background-color: var(--theme-bg-color-light);
 }
 .home-list-item__title{
-  font-weight: bolder;
+  //font-weight: bolder;
 }
 .home-list-item__subtitle-text_color{
   color: #9b4811;
@@ -288,8 +288,32 @@
 }
 
 /* card-footer-tele */
+/*
+ * ! Высота шапки и подвала карточки телеметрии.
+ *
+ * В 9-й версии iOS-значения min-height этих полос выросли 44px -> 52px
+ * (card-vars.less: в 6.3.17 — ios 44px, в 9.1.3 — ios 52px; у MD в обеих
+ * версиях 48px, поэтому правится только iOS-ветка через :root).
+ *
+ * Замер эталонного снимка (1080x1966 при ширине экрана 360px, т. е. делим на 3):
+ *     шапка      90.3 .. 134.7   -> 44.4px
+ *     середина  135.3 .. 280.7   -> 146px
+ *     подвал    281.7 .. 326.0   -> 44.7px
+ * До этой правки у нас было 52 / 146 / 54 — карточка выходила на 16px выше
+ * эталонной. Середина совпадала: --f7-card-content-padding-vertical в обеих
+ * версиях 16px, высоту задаёт содержимое (шкалы), а не переменная.
+ *
+ * Селектор :root и .ios имеют одинаковую специфичность, а app.less подключается
+ * после framework7.less — объявление выигрывает по порядку.
+ */
+:root {
+  --f7-card-header-min-height: 44px;
+  --f7-card-footer-min-height: 44px;
+}
 .card-header-tele {
   background-color: var(--theme-bg-color-light);
+  /* Не 500: в legacy здесь bolder (app.less:151), т. е. 700 — заголовок
+   * карточки заметно жирнее, чем даёт Framework7 9 по умолчанию. */
   font-weight: bolder;
 }
 .card-footer-tele {
@@ -302,16 +326,31 @@
   color: #040404;
   display: inline-flex;
 }
+/*
+ * ! Высота строки в подвале карточки — 1, а не унаследованные 1.4.
+ *
+ * Столбик подвала — inline-flex, поэтому иконка и число становятся его
+ * flex-элементами, а высота элемента-иконки берётся из её собственной коробки
+ * строки: font-size 24px * унаследованный line-height 1.4 = 33.6px. Отсюда
+ * подвал выходил 54px (33.6 + 2*10 отступов) вместо 44px на эталонном снимке.
+ *
+ * Замер эталона (делим на 3): полоса подвала 281.7..326.0 -> 44.3px, внутри
+ * значок занимает 24px (глиф 22px) при отступе 10px сверху и снизу.
+ * С line-height: 1 коробка значка = 24px, коробка числа 16px + margin-top 8px
+ * = 24px, значит высота подвала снова 24 + 20 = 44px.
+ */
 .card-footer-tele__text {
   margin-top: calc(var(--card-footer-icon-size)/3);
   //margin-right: 0.4rem;
   color: var(--color-subtitle-text);
   font-weight: bolder;
   font-size: var(--card-footer-text-size);
+  line-height: 1;
 }
 .card-footer-tele__icon {
   margin-right: 0.2rem;
   font-size: var(--card-footer-icon-size);
+  line-height: 1;
 }
 
 .settings-main__list-item,
