@@ -358,6 +358,18 @@
 }
 
 /*
+ * ! Пояснение под пунктом списка на странице настроек (settings.svelte).
+ *
+ * В разметке это сниппет footerSlot у ListItem, в DOM — .item-footer внутри
+ * .item-title. Штатный цвет Framework7 — rgba(0,0,0,0.45), здесь он заменён цветом
+ * подписи --color-subtitle-text (#9b4811): так пояснения читаются как подписи
+ * второго уровня, а не как серый текст.
+ */
+.settings-main__list-item .item-footer {
+  color: var(--color-subtitle-text);
+}
+
+/*
  * ! Фон строки-параметра вынесен из разметки в класс.
  *
  * В разметке стоял инлайн `style="background-color: var(--f7-theme-color-bg-tint-color)"`,
