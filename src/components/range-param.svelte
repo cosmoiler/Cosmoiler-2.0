@@ -1,4 +1,24 @@
 <!--
+  ! Переключатель отдельной строкой НАД шкалой и над её заголовком (карточка
+  ! «Объем масла»).
+  !
+  ! По умолчанию тумблер рисуется в самой строке шкалы, справа от неё (toggle: true).
+  ! Если передан toggleLabel, тумблер переезжает в свою строку ПЕРЕД заголовком
+  ! шкалы, а в строке шкалы больше не рисуется (см. условие ниже). Порядок важен:
+  ! в карточке объёма заголовок — это подпись параметра («Время вкл.»), и тумблер
+  ! должен стоять выше неё, а не между подписью и шкалой.
+  ! Подпись оформлена теми же классами, что и строка «Заполнение системы» на
+  ! странице System — те же 14px и цвет --color-subtitle-text (#9b4811).
+-->
+{#if toggle && toggleLabel}
+  <List>
+    <ListItem class="row-tint">
+      <div class="item-cell width-auto flex-shrink-0 list-input__label list-input__label-text_color">{toggleLabel}</div>
+      <div class="item-cell width-auto flex-shrink-4"><Toggle checked={toggleCheck} onToggleChange={onCtrlToggle} /></div>
+    </ListItem>
+  </List>
+{/if}
+<!--
   ! Заголовок шкалы рисуется только когда есть что показать.
   !
   ! Проп title не обязателен: у шкалы объёма масла (settings/pump.svelte) он не
@@ -14,23 +34,6 @@
     {/if}
   </BlockTitle>
 {/if}
-  <!--
-    ! Переключатель отдельной строкой над шкалой (карточка «Объем масла»).
-    !
-    ! По умолчанию тумблер рисуется в самой строке шкалы, справа от неё (toggle: true).
-    ! Если передан toggleLabel, тумблер переезжает в свою строку над шкалой, а в
-    ! строке шкалы больше не рисуется (см. условие ниже). Подпись оформлена теми же
-    ! классами, что и строка «Заполнение системы» на странице System — те же 14px и
-    ! цвет --color-subtitle-text (#9b4811).
-  -->
-  {#if toggle && toggleLabel}
-    <List>
-      <ListItem class="row-tint">
-        <div class="item-cell width-auto flex-shrink-0 list-input__label list-input__label-text_color">{toggleLabel}</div>
-        <div class="item-cell width-auto flex-shrink-4"><Toggle checked={toggleCheck} onToggleChange={onCtrlToggle} /></div>
-      </ListItem>
-    </List>
-  {/if}
   <List simpleList>
     <ListItem class="row-tint">
       <div class="item-cell width-auto flex-shrink-0">

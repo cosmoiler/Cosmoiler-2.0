@@ -444,7 +444,7 @@
    * 8px (это её собственный margin).
    */
   &:last-child {
-    margin-bottom: 28px;
+    margin-bottom: 38px;
   }
 
   /*
@@ -487,6 +487,28 @@
  */
 .section-card .sensor__list-item .item-title {
   color: var(--color-subtitle-text);
+}
+
+/*
+ * ! Строки-переключатели внутри карточки — ниже штатных.
+ *
+ * Высоту строки в Framework7 задают две вещи: min-height пункта списка
+ * (--f7-list-item-min-height, iOS-умолчание 52px) и вертикальные отступы внутреннего
+ * блока .item-inner (по 12px). Две такие строки подряд в карточке читаются как
+ * «разъехавшиеся»: замер до правки — строки по 52px, между подписями 28px.
+ *
+ * Уменьшаем то и другое (44px и по 8px) — получается 44px, между подписями 20px.
+ * Меньше нельзя: 44px это минимальная комфортная высота строки-цели для касания.
+ *
+ * Правило намеренно узкое — по .sensor__list-item (радиокнопки): строки шкал
+ * (.item-cell--scale) и их высота не затрагиваются.
+ */
+.section-card li:has(.sensor__list-item) {
+  --f7-list-item-min-height: 44px;
+}
+.section-card li:has(.sensor__list-item) .item-inner {
+  padding-top: 8px;
+  padding-bottom: 8px;
 }
 
 /*
