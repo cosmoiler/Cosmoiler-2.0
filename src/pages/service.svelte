@@ -29,14 +29,29 @@
     <BlockTitle class={`block-title-noconnection__text`} >{$t('home.noconnect')}</BlockTitle>
   {/if}
 
-  <List mediaList inset class='elevation-3' style="border-radius: 6px;">
-    <ListItem class={`settings-main__list-item`}
-      title={serviceTitle}
-      subtitle={serviceSubtitle}
-      text={serviceText}
-      media={serviceMedia}
-    />
-  </List>
+  <!--
+    ! Карточка устройства — тот же .section-card, что и на других страницах
+    ! (стили в css/app.less). Было: отдельный inset-список с elevation-3 и
+    ! инлайновым border-radius: 6px — единственная карточка приложения с
+    ! радиусом 6px вместо 16px и со своей инлайновой тенью.
+    !
+    ! Теперь радиус, тень и отступы общие с карточками страниц System / Датчик /
+    ! Насос, поэтому страница читается как часть приложения.
+    !
+    ! Класс settings-main__list-item убран: он даёт бежевый фон #f8f8f3, то есть
+    ! карточка была бы залита ровно тем же цветом, что шапки других карточек, и
+    ! не читалась бы как карточка (белое тело — признак тела, а не шапки).
+  -->
+  <div class="section-card">
+    <List mediaList>
+      <ListItem
+        title={serviceTitle}
+        subtitle={serviceSubtitle}
+        text={serviceText}
+        media={serviceMedia}
+      />
+    </List>
+  </div>
 
   <List>
     {#each items as {link, title, view}}
