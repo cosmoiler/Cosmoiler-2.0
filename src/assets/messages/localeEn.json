@@ -52,6 +52,7 @@
     "settings.pump.std.volume.block.p1": "The optimal setting is an oil volume such that a single drop comes out of the nozzle when the pump operates.",
     "settings.pump.time.on": "Time on",
     "settings.pump.time.off": "Time off",
+    "settings.pump.control": "Pump control",
     "settings.pump.nonstd.block.p1": "Set the time parameters for your pump (valve) type. They determine the amount of oil the pump dispenses.",
     "settings.presets.title": "Presets",
     "settings.presets.city": "City",

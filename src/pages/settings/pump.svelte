@@ -196,6 +196,8 @@
           tmpPump.dpms = T * e/100;
           store.dispatch('sendPump', tmpPump);
         },
+        // ! Тумблер строкой НАД шкалой (подпись «Управление насосом»), а не справа.
+        toggleLabel: $t('settings.pump.control'),
         toggle: true,
         toggleCheck: fOnOffPump,
         // ! F7 9: onToggleChange получает булево состояние, а не событие.
@@ -220,6 +222,8 @@
           tmpPump.dpms = T * e/100;
           store.dispatch('sendPump', tmpPump);
         },
+        // ! Тумблер строкой НАД шкалой (подпись «Управление насосом»), а не справа.
+        toggleLabel: $t('settings.pump.control'),
         toggle: true,
         toggleCheck: fOnOffPump,
         onCtrlToggle: (checked) => {
@@ -244,6 +248,9 @@
           tmpPump.dpms = e;
           store.dispatch('sendPump', tmpPump);
         },
+        // ! Тумблер строкой НАД шкалой: в карточке объёма он общий для пары
+        //   «время вкл/выкл», поэтому подпись та же, что у шкалы объёма.
+        toggleLabel: $t('settings.pump.control'),
         toggle: true,
         toggleCheck: fOnOffPump,
         onCtrlToggle: (checked) => {

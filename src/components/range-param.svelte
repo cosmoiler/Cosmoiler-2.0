@@ -1,17 +1,36 @@
+<!--
+  ! Заголовок шкалы рисуется только когда есть что показать.
+  !
+  ! Проп title не обязателен: у шкалы объёма масла (settings/pump.svelte) он не
+  ! задан, а BlockTitle всё равно рисовался — пустой полосой. Вне карточки это было
+  ! малозаметно, но внутри .section-card полоса получает фон шапки, и в карточке
+  ! появлялся лишний бежевый прямоугольник между пояснением и строкой со шкалой.
+-->
+{#if title || name_value}
 <BlockTitle class="display-flex justify-content-space-between">
     <span>{title}</span>
     {#if name_value}
       <span style="color: var(--f7-theme-color-change-text)">{value} {name_value}</span>
-<!--       <Input class={`settings-main__list-item`}
-      type="text"
-      placeholder="Введите имя"
-      bind:value={value}
-    >
-    </Input>
-
-    <span style="color: var(--f7-theme-color-change-text)">{name_value}</span> -->
     {/if}
   </BlockTitle>
+{/if}
+  <!--
+    ! Переключатель отдельной строкой над шкалой (карточка «Объем масла»).
+    !
+    ! По умолчанию тумблер рисуется в самой строке шкалы, справа от неё (toggle: true).
+    ! Если передан toggleLabel, тумблер переезжает в свою строку над шкалой, а в
+    ! строке шкалы больше не рисуется (см. условие ниже). Подпись оформлена теми же
+    ! классами, что и строка «Заполнение системы» на странице System — те же 14px и
+    ! цвет --color-subtitle-text (#9b4811).
+  -->
+  {#if toggle && toggleLabel}
+    <List>
+      <ListItem class="row-tint">
+        <div class="item-cell width-auto flex-shrink-0 list-input__label list-input__label-text_color">{toggleLabel}</div>
+        <div class="item-cell width-auto flex-shrink-4"><Toggle checked={toggleCheck} onToggleChange={onCtrlToggle} /></div>
+      </ListItem>
+    </List>
+  {/if}
   <List simpleList>
     <ListItem class="row-tint">
       <div class="item-cell width-auto flex-shrink-0">
@@ -62,7 +81,7 @@
           <Icon icon={icon2} style="font-size: 30px" />
         </div>
       {/if}
-      {#if toggle}
+      {#if toggle && !toggleLabel}
         <div class="item-cell width-auto flex-shrink-0">
           <Toggle checked={toggleCheck} onToggleChange={onCtrlToggle} />
         </div>
@@ -104,6 +123,10 @@
   export let icon2 = undefined
 
   export let toggle = false
+  /* ! Подпись переключателя. Если задана, тумблер выносится отдельной строкой НАД
+   * шкалой, а не справа от неё; стиль подписи — как у строки «Заполнение системы»
+   * на странице System (классы .list-input__label). */
+  export let toggleLabel = undefined
   export let toggleCheck = undefined
   export let onCtrlToggle = undefined
 </script>
