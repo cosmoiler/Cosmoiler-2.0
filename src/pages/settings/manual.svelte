@@ -4,8 +4,16 @@
 
   <Navbar title={$t('settings.pump.title')} />
 
+  <!--
+    ! Каждый параметр — своя карточка, как на страницах пресетов и System
+    ! (.section-card в css/app.less): <Ranges> уже отдаёт заголовок (BlockTitle)
+    ! и строку со шкалой, карточке достаточно обёртки. Иначе шкалы висели на
+    ! фоне страницы без границ и читались как один общий список.
+  -->
   {#each rangeValues as rangeValue}
+    <div class="section-card">
       <Ranges {...rangeValue} />
+    </div>
   {/each}
 </Page>
 
