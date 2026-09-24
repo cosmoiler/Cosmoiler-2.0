@@ -72,6 +72,8 @@
 
     "settings.sensor.title": "Датчик",
     "settings.sensor.selectsensor": "Выберите тип датчика",
+    "settings.sensor.type": "Тип датчика",
+    "settings.sensor.imp.settings": "Настройки импульсного датчика",
     "settings.sensor.description": "Выбор датчика скорости и расстояния",
 
     "settings.sensor.gnss": "GPS",

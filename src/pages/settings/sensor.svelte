@@ -3,45 +3,60 @@
     class={`page`}
     onPageAfterOut={pageAfterOut}>
 
-    <Navbar title={$t('settings.pump.title')} />
+    <Navbar title={$t('settings.sensor.title')} />
 
-    <BlockTitle>{$t('settings.sensor.selectsensor')}</BlockTitle>
+    <!--
+      ! Карточки страницы — как на других страницах настроек (.section-card
+      ! в css/app.less). Первая карточка: тип датчика. Вторая появляется только
+      ! при выборе импульсного датчика — её строки (импульсы на оборот, ширина,
+      ! профиль и диаметр колеса) относятся именно к нему.
+    -->
+    <div class="section-card">
+        <BlockTitle>{$t('settings.sensor.type')}</BlockTitle>
 
-    <List>
-    {#if gnssPresent.gps} <!-- если модуль GNSS установлен -->
-        <ListItem
-        radio
-        name="sensor"
-        value="gps"
-        title={$t('settings.sensor.gnss')}
-        checked={fGPS}
-        onChange={() => {
-            tmpOdometer.sensor.gnss = true
-            //mapSettings.set("sensor", tmpOdometer.sensor);
-            //log(mapSettings)
-        }}
-        class={`sensor__list-item`}>
-        </ListItem>
-    {/if}
-   <!--  {:else} -->
-        <ListItem
+        <List>
+        {#if gnssPresent.gps} <!-- если модуль GNSS установлен -->
+            <ListItem
             radio
             name="sensor"
-            value="imp"
-            title={$t('settings.sensor.impulse')}
-            checked={fIMP}
+            value="gps"
+            title={$t('settings.sensor.gnss')}
+            checked={fGPS}
             onChange={() => {
-                tmpOdometer.sensor.gnss = false
+                tmpOdometer.sensor.gnss = true
+                //mapSettings.set("sensor", tmpOdometer.sensor);
+                //log(mapSettings)
+                // ! Svelte 5: правка поля объекта не считается изменением состояния,
+                // поэтому ссылку переприсваиваем — иначе карточка настроек импульсного
+                // датчика не переключится.
+                tmpOdometer = tmpOdometer
             }}
             class={`sensor__list-item`}>
-        </ListItem>
-    <!-- {/if} -->
-    </List>
+            </ListItem>
+        {/if}
+       <!--  {:else} -->
+            <ListItem
+                radio
+                name="sensor"
+                value="imp"
+                title={$t('settings.sensor.impulse')}
+                checked={fIMP}
+                onChange={() => {
+                    tmpOdometer.sensor.gnss = false
+                    tmpOdometer = tmpOdometer
+                }}
+                class={`sensor__list-item`}>
+            </ListItem>
+        <!-- {/if} -->
+        </List>
+    </div>
 
 
 <!--   Настройки импульсного режима -->
     {#if fIMP}
-    <List noHairlinesMd >
+    <div class="section-card">
+        <BlockTitle>{$t('settings.sensor.imp.settings')}</BlockTitle>
+        <List noHairlinesMd >
 <!-- Импульсов на оборот -->
         <ListInput
         label={$t('settings.sensor.imprev')}
@@ -92,6 +107,7 @@
             {/each}
         </ListInput>
     </List>
+    </div>
     {/if}
 </Page>
 
@@ -121,11 +137,16 @@
     let interval
     let tmpOdometer = odometer
 
-    $: fGPS = (gnssPresent.gps) ? true : false
-    $: fIMP = (!gnssPresent.gps) ? true : false
-
-/*     $: fGPS = (tmpOdometer.sensor.gnss && gnssPresent.gps) ? true : false
-    $: fIMP = (!tmpOdometer.sensor.gnss || !gnssPresent.gps) ? true : false */
+    /*
+     * ! Тип датчика — по ВЫБОРУ пользователя (tmpOdometer.sensor.gnss), а не только
+     * по наличию модуля ГНСС.
+     *
+     * Раньше здесь было fGPS = gnssPresent.gps, fIMP = !gnssPresent.gps: карточка
+     * настроек импульсного датчика показывалась лишь когда модуля ГНСС нет вовсе,
+     * и на плате с ГНСС выбор «Импульсный» ничего не раскрывал.
+     */
+    $: fGPS = (tmpOdometer.sensor.gnss && gnssPresent.gps) ? true : false
+    $: fIMP = (!tmpOdometer.sensor.gnss || !gnssPresent.gps) ? true : false
 
 
     $: if (!connected) document.location.reload()

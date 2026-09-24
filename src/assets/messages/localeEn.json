@@ -72,6 +72,9 @@
 
     "settings.sensor.title": "Sensor",
     "settings.sensor.selectsensor": "Select the sensor type",
+    "settings.sensor.type": "Sensor type",
+    "settings.sensor.imp.settings": "Impulse sensor settings",
+    "settings.sensor.description": "Speed and distance sensor selection",
     "settings.sensor.gnss": "GPS",
     "settings.sensor.impulse": "Impulse",
     "settings.sensor.imprev": "Imp. per rev.:",
