@@ -13,7 +13,7 @@
     {/if}
   </BlockTitle>
   <List simpleList>
-    <ListItem style="background-color: var(--f7-theme-color-bg-tint-color)">
+    <ListItem class="row-tint">
       <div class="item-cell width-auto flex-shrink-0">
         <Icon icon={icon} style="font-size: 30px" />
       </div>

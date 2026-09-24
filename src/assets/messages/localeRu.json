@@ -91,6 +91,7 @@
 
     "service.system.pumping.title": "Прокачка",
     "service.system.pumping.text_toggle": "Заполнение системы",
+    "service.system.instr.title": "Инструкция",
     "service.system.led.title": "Яркость светодиода",
     "service.system.onoff.title": "Автовыключение",
     "service.system.onoff.text_toggle1": "Начать обучение",

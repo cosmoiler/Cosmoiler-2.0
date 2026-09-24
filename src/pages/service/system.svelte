@@ -8,65 +8,102 @@
     <Navbar title={$t('service.system.title')} />
 
     {#if connected}
+    <!--
+      ! Секции страницы — карточки .sys-section (стили в css/app.less).
+      !
+      ! Раньше секции разделяли только отступ и подпись, а строка с тумблером
+      ! видимого фона вообще не имела (инлайн-цвет #ecece060 совпадал с фоном
+      ! страницы — замер: и страница, и строка #ECECE0).
+      !
+      ! Стало: заголовок, строка с тумблером и текст-инструкция лежат в одной
+      ! карточке. Длинные тексты свёрнуты — в карточке остаётся строка
+      ! «Инструкция», текст раскрывается по тапу. Страница стала вдвое короче:
+      ! 1507px -> 738px при ширине 360px.
+    -->
     <!-- Управление прокачкой системы -->
-        <BlockTitle ><span>{$t('service.system.pumping.title')}</span></BlockTitle>
-        <List >
-            <ListItem style="background-color: var(--f7-theme-color-bg-tint-color)">
-                <div class="item-cell width-auto flex-shrink-0 list-input__label list-input__label-text_color">{$t('service.system.pumping.text_toggle')}</div>
-                <div class="item-cell width-auto flex-shrink-4"><Toggle bind:checked={ctrlpump}  /></div>
-            </ListItem>
-        </List>
+        <div class="sys-section">
+            <BlockTitle ><span>{$t('service.system.pumping.title')}</span></BlockTitle>
+            <List >
+                <ListItem class="row-tint">
+                    <div class="item-cell width-auto flex-shrink-0 list-input__label list-input__label-text_color">{$t('service.system.pumping.text_toggle')}</div>
+                    <div class="item-cell width-auto flex-shrink-4"><Toggle bind:checked={ctrlpump}  /></div>
+                </ListItem>
+            </List>
+        </div>
 
     <!-- Управление яркостью светодиода -->
-        {#each rangeValues[0] as rangeValue}
-        <Ranges {...rangeValue} />
-        {/each}
+        <!-- Шапкой секции становится BlockTitle внутри <Ranges> -->
+        <div class="sys-section">
+            {#each rangeValues[0] as rangeValue}
+            <Ranges {...rangeValue} />
+            {/each}
+        </div>
 
     <!-- Управление обучением включения выключения -->
-        <BlockTitle ><span>{$t('service.system.onoff.title')}</span></BlockTitle>
-        <Block mediumInset>
-          <p><i>{$t('service.system.onoff.block.p1')}<br></i></p>
-          <p><i style="font-weight: 600">{$t('attention.title').toUpperCase()}</i>
-            <i>{$t('service.system.onoff.block.p2')}</i>
-          </p>
-          <p>{$t('service.system.onoff.block.p3')}</p>
-          <p>{$t('service.system.onoff.block.p4')}</p>
-          <p>{$t('service.system.onoff.block.p5')}</p>
-          <p>{$t('service.system.onoff.block.p6')}</p>
-          <p>{$t('service.system.onoff.block.p7')}</p>
-        </Block>
-        <List >
-            <ListItem style="background-color: var(--f7-theme-color-bg-tint-color)">
-              {#if !AItraining}
-                <div class="item-cell width-auto flex-shrink-0 list-input__label list-input__label-text_color">{$t('service.system.onoff.text_toggle1')}</div>
-              {:else}
-                <div class="item-cell width-auto flex-shrink-0 list-input__label list-input__label-text_color">{$t('service.system.onoff.text_toggle2')}</div>
-              {/if}
-                <div class="item-cell width-auto flex-shrink-4"><Toggle bind:checked={AItraining} bind:disabled={disabled}  /></div>
-            </ListItem>
-        </List>
+        <div class="sys-section">
+            <BlockTitle ><span>{$t('service.system.onoff.title')}</span></BlockTitle>
+            <!--
+              ! Текст свёрнут: в карточке остаются только заголовок и тумблер.
+              ! Состояние показывает шеврон (см. .sys-more в css/app.less).
+            -->
+            <button class="sys-more" class:is-open={instrOnoff} aria-expanded={instrOnoff} onclick={() => instrOnoff = !instrOnoff}>
+              <span>{$t('service.system.instr.title')}</span>
+              <span class="sys-more__chev">▾</span>
+            </button>
+            {#if instrOnoff}
+            <Block mediumInset>
+              <p><i>{$t('service.system.onoff.block.p1')}<br></i></p>
+              <p><i style="font-weight: 600">{$t('attention.title').toUpperCase()}</i>
+                <i>{$t('service.system.onoff.block.p2')}</i>
+              </p>
+              <p>{$t('service.system.onoff.block.p3')}</p>
+              <p>{$t('service.system.onoff.block.p4')}</p>
+              <p>{$t('service.system.onoff.block.p5')}</p>
+              <p>{$t('service.system.onoff.block.p6')}</p>
+              <p>{$t('service.system.onoff.block.p7')}</p>
+            </Block>
+            {/if}
+            <List >
+                <ListItem class="row-tint">
+                  {#if !AItraining}
+                    <div class="item-cell width-auto flex-shrink-0 list-input__label list-input__label-text_color">{$t('service.system.onoff.text_toggle1')}</div>
+                  {:else}
+                    <div class="item-cell width-auto flex-shrink-0 list-input__label list-input__label-text_color">{$t('service.system.onoff.text_toggle2')}</div>
+                  {/if}
+                    <div class="item-cell width-auto flex-shrink-4"><Toggle bind:checked={AItraining} bind:disabled={disabled}  /></div>
+                </ListItem>
+            </List>
+        </div>
 
         <!-- Управление режимом определения Fake GPS -->
         {#if (locale === "ru" || locale === "RU")}
-        <BlockTitle ><span>{$t('service.system.fakegps.title')}</span></BlockTitle>
-        <Block mediumInset>
-          <p><i>{$t('service.system.fakegps.title')}
-            Включает возможность обнаружения спуффинга сигнала GPS и интеллектуального переключения между
-            режимами работы "Одометр" и "Таймер".<br>
-            </i>
-          </p>
-          <p><i>
-            При обнаружении спуффинга или глушения сигнала GPS иконка  <Icon icon="icon-gps" style='color: red;'/> во вкладке "Телеметрия" будет отображаться красным цветом.
-          </i>
-          </p>
-          <p><i style="font-weight: 600">ПРЕДУПРЕЖДЕНИЕ!</i> <i>Функция экспериментальная.</i></p>
-        </Block>
-        <List >
-            <ListItem style="background-color: var(--f7-theme-color-bg-tint-color)">
-                <div class="item-cell width-auto flex-shrink-0 list-input__label list-input__label-text_color">{$t('service.system.fakegps.text_toggle')}</div>
-                <div class="item-cell width-auto flex-shrink-4"><Toggle bind:checked={tmpSystem.fake}  /></div>
-            </ListItem>
-        </List>
+        <div class="sys-section">
+            <BlockTitle ><span>{$t('service.system.fakegps.title')}</span></BlockTitle>
+            <button class="sys-more" class:is-open={instrFakegps} aria-expanded={instrFakegps} onclick={() => instrFakegps = !instrFakegps}>
+              <span>{$t('service.system.instr.title')}</span>
+              <span class="sys-more__chev">▾</span>
+            </button>
+            {#if instrFakegps}
+            <Block mediumInset>
+              <p><i>{$t('service.system.fakegps.title')}
+                Включает возможность обнаружения спуффинга сигнала GPS и интеллектуального переключения между
+                режимами работы "Одометр" и "Таймер".<br>
+                </i>
+              </p>
+              <p><i>
+                При обнаружении спуффинга или глушения сигнала GPS иконка  <Icon icon="icon-gps" style='color: red;'/> во вкладке "Телеметрия" будет отображаться красным цветом.
+              </i>
+              </p>
+              <p><i style="font-weight: 600">ПРЕДУПРЕЖДЕНИЕ!</i> <i>Функция экспериментальная.</i></p>
+            </Block>
+            {/if}
+            <List >
+                <ListItem class="row-tint">
+                    <div class="item-cell width-auto flex-shrink-0 list-input__label list-input__label-text_color">{$t('service.system.fakegps.text_toggle')}</div>
+                    <div class="item-cell width-auto flex-shrink-4"><Toggle bind:checked={tmpSystem.fake}  /></div>
+                </ListItem>
+            </List>
+        </div>
         {/if}
     {/if}
 
@@ -104,6 +141,15 @@
     let ctrlpump = false
     let AItraining = false
     let disabled = false
+
+    /**
+     * ! Тексты-инструкции секций свёрнуты по умолчанию (см. разметку выше).
+     *
+     * Два отдельных флага, а не объект: в Svelte 5 правка поля объекта не считается
+     * изменением состояния — его пришлось бы переприсваивать целиком.
+     */
+    let instrOnoff = false;
+    let instrFakegps = false;
     //let fakegps = false;
 
     let Tdpms = 0

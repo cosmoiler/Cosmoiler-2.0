@@ -135,7 +135,7 @@
   background-color: var(--theme-bg-color-light);
 }
 .home-list-item__title{
-  //font-weight: bolder;
+  font-weight: 500;
 }
 .home-list-item__subtitle-text_color{
   color: #9b4811;
@@ -307,14 +307,14 @@
  * после framework7.less — объявление выигрывает по порядку.
  */
 :root {
-  --f7-card-header-min-height: 44px;
-  --f7-card-footer-min-height: 44px;
+  --f7-card-header-min-height: 50px;
+  --f7-card-footer-min-height: 54px;
 }
 .card-header-tele {
   background-color: var(--theme-bg-color-light);
   /* Не 500: в legacy здесь bolder (app.less:151), т. е. 700 — заголовок
    * карточки заметно жирнее, чем даёт Framework7 9 по умолчанию. */
-  font-weight: bolder;
+  font-weight: 600;
 }
 .card-footer-tele {
   justify-content: space-around;
@@ -356,6 +356,104 @@
 .settings-main__list-item,
 .sensor__list-item {
   background-color: var(--theme-bg-color-light);
+}
+
+/*
+ * ! Фон строки-параметра вынесен из разметки в класс.
+ *
+ * В разметке стоял инлайн `style="background-color: var(--f7-theme-color-bg-tint-color)"`,
+ * а инлайн нельзя перебить без !important. Внутри секций страницы System (см.
+ * .sys-section ниже) строке нужен ДРУГОЙ фон, поэтому цвет переехал сюда, а в
+ * разметке остался только класс. Вне секций вид не меняется: это тот же цвет.
+ *
+ * Заодно он объясняет, почему строки «сливались» со страницей: #ecece060 — это
+ * альфа 37.6%, и поверх такого же #ecece0 получается ровно #ecece0.
+ */
+.row-tint {
+  background-color: var(--f7-theme-color-bg-tint-color);
+}
+
+/*
+ * ! Секции страницы System (pages/service/system.svelte).
+ *
+ * Было: секции разделяли только отступ (block-title margin 35px + 10px) и
+ * подпись, а строка с тумблером видимого фона не имела вовсе (см. .row-tint).
+ * Двум длинным текстам-инструкциям (358px и 226px при ширине 360px) это вредило
+ * больше всего: они висели между заголовком и своим тумблером, и связь
+ * «текст — тумблер» приходилось угадывать.
+ *
+ * Стало: секция — карточка в том же языке, что и карточка телеметрии
+ * (tele-card.svelte): шапка-полоса #f8f8f3, белое тело, бежевая нижняя строка
+ * с тумблером. Обёртка .sys-section стоит в разметке, а заголовок и строки
+ * приходят изнутри — в том числе из <Ranges>, поэтому у секции «Светодиод»
+ * шапкой становится его собственный BlockTitle.
+ */
+.sys-section {
+  margin: 12px 16px;
+  background-color: #fff;
+  border-radius: 16px;
+  box-shadow: var(--f7-card-box-shadow);
+  /* Без обрезки фон шапки вылезал бы за скруглённые углы. */
+  overflow: hidden;
+
+  /* Шапка секции: внешние отступы BlockTitle гасим, отступы задаём свои. */
+  > .block-title {
+    margin: 0;
+    padding: 12px 16px;
+    background-color: var(--theme-bg-color-light);
+    color: var(--f7-theme-color);
+    font-weight: bolder;
+  }
+
+  /* Внутри карточки у списков и блоков внешних отступов быть не должно:
+   * «воздух» даёт сама карточка. */
+  > .list,
+  > .block {
+    margin: 0;
+  }
+  > .block.medium-inset {
+    padding: 12px 16px;
+  }
+
+  /* Нижняя строка карточки (тумблер) — того же цвета, что и шапка. */
+  .row-tint {
+    background-color: var(--theme-bg-color-light);
+  }
+}
+
+/*
+ * ! Строка «Инструкция» — раскрывает свёрнутый текст карточки.
+ *
+ * Тексты-инструкции в секциях «Авто вкл/выкл» и «Спуффинг GPS» длинные (на 360px
+ * это 358px и 226px высоты), а настройка в каждой секции одна — тумблер. Поэтому
+ * по умолчанию в карточке остаются только заголовок и тумблер, а текст
+ * раскрывается по тапу: страница стала вдвое короче (замер при 360px:
+ * 1507px -> 738px).
+ */
+.sys-more {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  /* width задан явно: у простого <button> остаются стили F7, из-за которых
+   * кнопка растягивалась иначе, чем нужно. */
+  width: 100%;
+  padding: 12px 16px;
+  border: 0;
+  background-color: transparent;
+  color: var(--f7-theme-color-change-text);
+  font-size: 14px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+/* Шеврон показывает состояние: подпись у кнопки одна и та же («Инструкция»), и
+ * без поворота было бы непонятно, раскрыта секция или нет. */
+.sys-more__chev {
+  display: inline-block;
+  transition: transform 0.2s;
+}
+.sys-more.is-open .sys-more__chev {
+  transform: rotate(180deg);
 }
 /*   .settings-main__icon_margin-top {
   margin-bottom: calc(var(--icon-size)/3);
