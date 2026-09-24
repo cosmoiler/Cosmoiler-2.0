@@ -7,102 +7,121 @@
     <Navbar title={$t('settings.pump.title')} />
 
 <!--     <BlockTitle>Настройка насоса под вязкость залитого масла</BlockTitle> -->
-    <BlockTitle class='block-title-text_settings'>
-        {$t('settings.pump.type')}
-    </BlockTitle>
-    <List>
-        <ListItem
-          radio
-          name="std"
-          value="std"
-          title={$t('settings.pump.type.std')}
-          checked={fStd}
-          onChange={() => {
-            tmpPump.usr = false
-            store.dispatch('sendPump', tmpPump);
-            //mapSettings.set("sensor", tmpOdometer.sensor);
-            //log(mapSettings)
-          }}
-          class={`sensor__list-item`}>
-        </ListItem>
-        <ListItem
-          radio
-          name="user"
-          value="usr"
-          title={$t('settings.pump.type.nonstd')}
-          checked={fUsr}
-          onChange={() => {
-            tmpPump.usr = true
-            store.dispatch('sendPump', tmpPump);
-            //mapSettings.set("sensor", tmpOdometer.sensor);
-            //log(mapSettings)
-          }}
-          class={`sensor__list-item`}>
-        </ListItem>
-    </List>
-
+    <!--
+      ! Карточки страницы — как на странице System (.section-card в css/app.less).
+      !
+      ! Карточек три: «Тип насоса», «Вязкость масла», «Объем масла». Вязкость нужна
+      ! только штатному насосу — у дополнительного (клапана) выдачу задают времена
+      ! вкл/выкл, поэтому при его выборе карточка «Вязкость масла» исчезает
+      ! ({#if !tmpPump.usr}), а содержимое третьей карточки зависит от типа:
+      ! штатному — шкала объема, дополнительному — времена вкл/выкл. Это не
+      ! разные карточки: времена тоже задают объем выдаваемого масла, что и
+      ! написано в подсказке settings.pump.nonstd.block.p1.
+    -->
+    <div class="section-card">
+        <BlockTitle class='block-title-text_settings'>
+            {$t('settings.pump.type')}
+        </BlockTitle>
+        <List>
+            <ListItem
+              radio
+              name="std"
+              value="std"
+              title={$t('settings.pump.type.std')}
+              checked={fStd}
+              onChange={() => {
+                tmpPump.usr = false
+                store.dispatch('sendPump', tmpPump);
+                //mapSettings.set("sensor", tmpOdometer.sensor);
+                //log(mapSettings)
+              }}
+              class={`sensor__list-item`}>
+            </ListItem>
+            <ListItem
+              radio
+              name="user"
+              value="usr"
+              title={$t('settings.pump.type.nonstd')}
+              checked={fUsr}
+              onChange={() => {
+                tmpPump.usr = true
+                store.dispatch('sendPump', tmpPump);
+                //mapSettings.set("sensor", tmpOdometer.sensor);
+                //log(mapSettings)
+              }}
+              class={`sensor__list-item`}>
+            </ListItem>
+        </List>
+    </div>
 
     {#if !tmpPump.usr}
-    <BlockTitle class='block-title-text_settings'>
-      {$t('settings.pump.std.viscosity')}
-    </BlockTitle>
-    <Block mediumInset>
-      <p><i>
-        {$t('settings.pump.std.viscosity.block.p1')}
-        </i>
-      </p>
-    </Block>
+    <div class="section-card">
+        <BlockTitle class='block-title-text_settings'>
+          {$t('settings.pump.std.viscosity')}
+        </BlockTitle>
+        <Block mediumInset>
+          <p><i>
+            {$t('settings.pump.std.viscosity.block.p1')}
+            </i>
+          </p>
+        </Block>
         <List>
-          <ListItem
-            radio
-            name="atf"
-            value="atf"
-            title={$t('settings.pump.std.viscosity.liquid')}
-            checked={is_atf}
-            onChange={() => {
-              Oil = typesOil.ATF
-             // T = 500
-              localStorage.setItem('oil', Oil)
-            }}
-            class={`sensor__list-item`}>
-          </ListItem>
-          <ListItem
-            radio
-            name="tad17"
-            value="tad17"
-            title={$t('settings.pump.std.viscosity.thick')}
-            checked={is_tad17}
-            onChange={() => {
-              Oil = typesOil.TAD
-             // T = 2000
-              localStorage.setItem('oil', Oil)
-            }}
-            class={`sensor__list-item`}>
-          </ListItem>
-      </List>
-      <BlockTitle class='block-title-text_settings'>
-        {$t('settings.pump.std.volume')}
-      </BlockTitle>
-      <Block mediumInset>
-        <i>
-          {$t('settings.pump.std.volume.block.p1')}
-          </i>
-      </Block>
-      {#if is_atf}
-        <Ranges {...rangeValues[0][0]} />
-      {:else if is_tad17}
-        <Ranges {...rangeValues[0][1]} />
-      {/if}
-    {:else}
-    <Block>
-      <p>
-        {$t('settings.pump.nonstd.block.p1')}
-      </p>
-    </Block>
-      {#each rangeValues[1] as rangeValue}
-        <Ranges {...rangeValue} />
-      {/each}
+            <ListItem
+              radio
+              name="atf"
+              value="atf"
+              title={$t('settings.pump.std.viscosity.liquid')}
+              checked={is_atf}
+              onChange={() => {
+                Oil = typesOil.ATF
+               // T = 500
+                localStorage.setItem('oil', Oil)
+              }}
+              class={`sensor__list-item`}>
+            </ListItem>
+            <ListItem
+              radio
+              name="tad17"
+              value="tad17"
+              title={$t('settings.pump.std.viscosity.thick')}
+              checked={is_tad17}
+              onChange={() => {
+                Oil = typesOil.TAD
+               // T = 2000
+                localStorage.setItem('oil', Oil)
+              }}
+              class={`sensor__list-item`}>
+            </ListItem>
+        </List>
+    </div>
     {/if}
+
+    <div class="section-card">
+        <BlockTitle class='block-title-text_settings'>
+          {$t('settings.pump.std.volume')}
+        </BlockTitle>
+        {#if !tmpPump.usr}
+          <Block mediumInset>
+            <i>
+              {$t('settings.pump.std.volume.block.p1')}
+              </i>
+          </Block>
+          {#if is_atf}
+            <Ranges {...rangeValues[0][0]} />
+          {:else if is_tad17}
+            <Ranges {...rangeValues[0][1]} />
+          {/if}
+        {:else}
+          <Block mediumInset>
+            <p>
+              {$t('settings.pump.nonstd.block.p1')}
+            </p>
+          </Block>
+          {#each rangeValues[1] as rangeValue}
+            <Ranges {...rangeValue} />
+          {/each}
+        {/if}
+    </div>
 
 </Page>
 
@@ -209,7 +228,7 @@
         }
       },],
       [{
-        title: "Время вкл.",
+        title: $t('settings.pump.time.on'),
         value: tmpPump.dpms,
         name_value: $t('ms'),
         minValue: 0,
@@ -233,7 +252,7 @@
         }
       },
       {
-        title: "Время выкл.",
+        title: $t('settings.pump.time.off'),
         value: tmpPump.dpdp,
         name_value: $t('ms'),
        // name_value: "%",

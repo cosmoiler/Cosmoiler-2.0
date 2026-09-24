@@ -50,6 +50,8 @@
     "settings.pump.std.viscosity.thick": "Густое (трансмиссионное)",
     "settings.pump.std.volume": "Объем масла",
     "settings.pump.std.volume.block.p1": "Оптимальная настройка заключается в задании такого объема масла, чтобы при срабатывании насоса из форсунки вытекала одна капля.",
+    "settings.pump.time.on": "Время вкл.",
+    "settings.pump.time.off": "Время выкл.",
     "settings.pump.nonstd.block.p1": "Задайте временные параметры работы для конкретного типа насоса (клапана). Параметры будут определять объем выдаваемого насосом количества масла.",
     "settings.presets.title": "Предустановки",
     "settings.presets.city": "Город",
@@ -69,6 +71,8 @@
 
     "settings.sensor.title": "Датчик",
     "settings.sensor.selectsensor": "Выберите тип датчика",
+    "settings.sensor.description": "Выбор датчика скорости и расстояния",
+
     "settings.sensor.gnss": "GPS",
     "settings.sensor.impulse": "Импульсный",
     "settings.sensor.imprev": "Количество импульсов на оборот колеса",
