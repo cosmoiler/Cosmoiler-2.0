@@ -9,7 +9,7 @@
 
     {#if connected}
     <!--
-      ! Секции страницы — карточки .sys-section (стили в css/app.less).
+      ! Секции страницы — карточки .section-card (стили в css/app.less).
       !
       ! Раньше секции разделяли только отступ и подпись, а строка с тумблером
       ! видимого фона вообще не имела (инлайн-цвет #ecece060 совпадал с фоном
@@ -21,7 +21,7 @@
       ! 1507px -> 738px при ширине 360px.
     -->
     <!-- Управление прокачкой системы -->
-        <div class="sys-section">
+        <div class="section-card">
             <BlockTitle ><span>{$t('service.system.pumping.title')}</span></BlockTitle>
             <List >
                 <ListItem class="row-tint">
@@ -33,22 +33,22 @@
 
     <!-- Управление яркостью светодиода -->
         <!-- Шапкой секции становится BlockTitle внутри <Ranges> -->
-        <div class="sys-section">
+        <div class="section-card">
             {#each rangeValues[0] as rangeValue}
             <Ranges {...rangeValue} />
             {/each}
         </div>
 
     <!-- Управление обучением включения выключения -->
-        <div class="sys-section">
+        <div class="section-card">
             <BlockTitle ><span>{$t('service.system.onoff.title')}</span></BlockTitle>
             <!--
               ! Текст свёрнут: в карточке остаются только заголовок и тумблер.
-              ! Состояние показывает шеврон (см. .sys-more в css/app.less).
+              ! Состояние показывает шеврон (см. .section-more в css/app.less).
             -->
-            <button class="sys-more" class:is-open={instrOnoff} aria-expanded={instrOnoff} onclick={() => instrOnoff = !instrOnoff}>
+            <button class="section-more" class:is-open={instrOnoff} aria-expanded={instrOnoff} onclick={() => instrOnoff = !instrOnoff}>
               <span>{$t('service.system.instr.title')}</span>
-              <span class="sys-more__chev">▾</span>
+              <span class="section-more__chev">▾</span>
             </button>
             {#if instrOnoff}
             <Block mediumInset>
@@ -77,11 +77,11 @@
 
         <!-- Управление режимом определения Fake GPS -->
         {#if (locale === "ru" || locale === "RU")}
-        <div class="sys-section">
+        <div class="section-card">
             <BlockTitle ><span>{$t('service.system.fakegps.title')}</span></BlockTitle>
-            <button class="sys-more" class:is-open={instrFakegps} aria-expanded={instrFakegps} onclick={() => instrFakegps = !instrFakegps}>
+            <button class="section-more" class:is-open={instrFakegps} aria-expanded={instrFakegps} onclick={() => instrFakegps = !instrFakegps}>
               <span>{$t('service.system.instr.title')}</span>
-              <span class="sys-more__chev">▾</span>
+              <span class="section-more__chev">▾</span>
             </button>
             {#if instrFakegps}
             <Block mediumInset>

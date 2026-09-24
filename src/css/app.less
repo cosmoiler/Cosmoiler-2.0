@@ -22,7 +22,6 @@
   //--f7-theme-color-tint: #7a5135;
 /*   --f7-toolbar-border-color: #f81212; */
   --theme-bg-color-light: #f8f8f3;
-
 }
 /* Invert navigation bars to fill style */
 :root,
@@ -363,7 +362,7 @@
  *
  * В разметке стоял инлайн `style="background-color: var(--f7-theme-color-bg-tint-color)"`,
  * а инлайн нельзя перебить без !important. Внутри секций страницы System (см.
- * .sys-section ниже) строке нужен ДРУГОЙ фон, поэтому цвет переехал сюда, а в
+ * .section-card ниже) строке нужен ДРУГОЙ фон, поэтому цвет переехал сюда, а в
  * разметке остался только класс. Вне секций вид не меняется: это тот же цвет.
  *
  * Заодно он объясняет, почему строки «сливались» со страницей: #ecece060 — это
@@ -384,12 +383,15 @@
  *
  * Стало: секция — карточка в том же языке, что и карточка телеметрии
  * (tele-card.svelte): шапка-полоса #f8f8f3, белое тело, бежевая нижняя строка
- * с тумблером. Обёртка .sys-section стоит в разметке, а заголовок и строки
+ * с тумблером. Обёртка .section-card стоит в разметке, а заголовок и строки
  * приходят изнутри — в том числе из <Ranges>, поэтому у секции «Светодиод»
  * шапкой становится его собственный BlockTitle.
  */
-.sys-section {
-  margin: 12px 16px;
+.section-card {
+  /* Отступы карточки: 8px и между карточками, и до краёв экрана (было 12px по
+   * вертикали и 16px по горизонтали). Соседние вертикальные отступы схлопываются,
+   * поэтому зазор между карточками равен ровно 8px, а не 16. */
+  margin: 8px;
   background-color: #fff;
   border-radius: 16px;
   box-shadow: var(--f7-card-box-shadow);
@@ -401,8 +403,8 @@
     margin: 0;
     padding: 12px 16px;
     background-color: var(--theme-bg-color-light);
-    color: var(--f7-theme-color);
-    font-weight: bolder;
+    color: var(--f7-list-item-title-text-color);//var(--f7-theme-color);
+    font-weight: 500;
   }
 
   /* Внутри карточки у списков и блоков внешних отступов быть не должно:
@@ -428,9 +430,9 @@
  * это 358px и 226px высоты), а настройка в каждой секции одна — тумблер. Поэтому
  * по умолчанию в карточке остаются только заголовок и тумблер, а текст
  * раскрывается по тапу: страница стала вдвое короче (замер при 360px:
- * 1507px -> 738px).
+ * 1507px -> 738px). Класс тот же, что у секций страницы System.
  */
-.sys-more {
+.section-more {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -448,11 +450,11 @@
 }
 /* Шеврон показывает состояние: подпись у кнопки одна и та же («Инструкция»), и
  * без поворота было бы непонятно, раскрыта секция или нет. */
-.sys-more__chev {
+.section-more__chev {
   display: inline-block;
   transition: transform 0.2s;
 }
-.sys-more.is-open .sys-more__chev {
+.section-more.is-open .section-more__chev {
   transform: rotate(180deg);
 }
 /*   .settings-main__icon_margin-top {

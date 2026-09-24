@@ -12,15 +12,24 @@
 
 <!-- ГОРОД -->
     <Tab id="tab-city-time" tabActive>
+      <!--
+        ! Каждый параметр — своя карточка, как секции на странице System
+        ! (.section-card в css/app.less): <Ranges> уже отдаёт заголовок
+        ! (BlockTitle) и строку со шкалой, карточке достаточно обёртки.
+      -->
       {#each rangeValues[0] as rangeValue}
-        <Ranges {...rangeValue} />
+        <div class="section-card">
+          <Ranges {...rangeValue} />
+        </div>
       {/each}
     </Tab>
 
 <!-- ДОЖДЬ ПЕСОК -->
     <Tab id="tab-rain">
       {#each rangeValues[1] as rangeValue}
-        <Ranges {...rangeValue}/>
+        <div class="section-card">
+          <Ranges {...rangeValue}/>
+        </div>
       {/each}
     </Tab>
   </Tabs>
