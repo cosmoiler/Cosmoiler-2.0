@@ -133,7 +133,7 @@
     let connected = useStore('connected', (value) => connected = value);
     let system = useStore('system', (value) => system = value);
     let mapSettings = useStore('mapSettings', (value) => mapSettings = value);
-    let ver = useStore('ver', (value) => ver = value);
+    let pump = useStore('pump', (value) => pump = value);
     //let locale = useStore('locale', (value) => locale = value);
     let locale = "ru"
 
@@ -152,24 +152,33 @@
     let instrFakegps = false;
     //let fakegps = false;
 
-    let Tdpms = 0
-    $: {
-      if (ver.hw[0] == 'B') Tdpms = 1000
-      if (ver.hw[0] == 'C') Tdpms = 3000 // 10 секунд работает насос
-      if (ver.hw[0] == 'd') Tdpms = 1000 // hw: dev - 10 секунд работает насос
-    }
+    // ! Длительность импульса прокачки — по типу насоса PMP.type (поле type
+    //   ответа /settings/pump), а не по первой букве ver.hw: там версия платы
+    //   («13.5B»), и для неё Tdpms оставалось 0 — при прокачке насос не
+    //   включался. Мембранному насосу (C) — 3 с, остальным — 1 с.
+    let Tdpms = 1000
+    $: Tdpms = (pump && pump.type && pump.type[0] == 'C') ? 3000 : 1000
 
 
     $: if (!connected) document.location.reload()
     $: {
+      const pumpParams = {dpms: Tdpms, dpdp: 1000}
       if (ctrlpump) {
+        // ! Команду насоса — только после ответа на /state/pumping: прошивка
+        // выполняет её лишь в режиме прокачки, а два запроса подряд могут
+        // прийти в любом порядке (docs/modes.md, решение 11).
         store.dispatch('modeWork', store.state.OILER_PUMPING)
+          .then(() => store.dispatch('ctrlPump', [true, 0, pumpParams]))
         setTimeout(() => {
             ctrlpump = false
         }, 180000)
       }
-      else store.dispatch('modeWork', store.state.OILER_AUTO)
-      store.dispatch('ctrlPump', [ctrlpump, 0, {dpms: Tdpms, dpdp: 1000}])
+      else {
+        // Выключение: насос прошивка останавливает и сама при выходе из
+        // прокачки, поэтому порядок этих двух запросов не важен.
+        store.dispatch('ctrlPump', [false, 0, pumpParams])
+        store.dispatch('modeWork', store.state.OILER_AUTO)
+      }
     }
 
     $: store.dispatch('fakeGPS', tmpSystem.fake)

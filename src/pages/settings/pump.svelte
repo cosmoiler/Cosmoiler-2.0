@@ -142,7 +142,6 @@
 
     let connected = useStore('connected', (value) => connected = value);
     let pump = useStore('pump', (value) => pump = value);
-    let ver = useStore('ver', (value) => ver = value);
 
     //console.log('connect:', connected)
 /* TODO: максимальный объем выдаваемый насосом 2 мл/мин для KAMOER */
@@ -166,10 +165,18 @@
     $: is_atf = (Oil == typesOil.ATF)? true : false
     $: is_tad17 = (Oil == typesOil.TAD)? true : false
 
+    // ! Предел времени включения T (100 % шкалы объёма) — по типу насоса
+    //   PMP.type: прошивка отдаёт его в поле type ответа /settings/pump.
+    //   Раньше тип брался из первой буквы ver.hw, но там версия платы, а буква
+    //   типа дописана в КОНЕЦ («13.5B»): T оставалось 0, шкала стояла на 98 %,
+    //   а любое её движение отправляло dpms = 0.
+    //   Неизвестный тип — как 'A' (то же правило у прошивки, pumpDefaultDpMs):
+    //   самый короткий предел, лишнего масла насос не подаст.
+    $: pumpType = (pump && pump.type) ? pump.type[0] : 'A'
     $: {
-      if (ver.hw[0] == 'B') T = 5000 // перистальтический насос
-      if (ver.hw[0] == 'A') T = 500 //  самодельный насос (устаревшее)
-      if (ver.hw[0] == 'C') { // мембранный насос с клапаном
+      T = 500 //  'A' — самодельный насос (устаревшее)
+      if (pumpType == 'B') T = 5000 // перистальтический насос
+      if (pumpType == 'C') { // мембранный насос с клапаном
         T = 1000
         if (is_atf) T = 500
         if (is_tad17) T = 2000

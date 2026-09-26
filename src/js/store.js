@@ -340,7 +340,8 @@ const store = createStore({
     pump: {
       id: "/pump.json",
       dpms: null, dpdp: null,
-      usr: false // пользовательский насос
+      usr: false, // пользовательский насос
+      type: ""    // тип насоса (PMP.type): 'A', 'B', 'C' — от него предел dpms в pump.svelte
     },
     system: {
       id: "/system.json",
@@ -676,7 +677,10 @@ const store = createStore({
       state.pump = data;
       state.pump = state.pump;
       deferSend('pump', () => {
-          deviceRequest('/settings/pump', { method: 'POST', data: {dpms: data.dpms} })
+          // ! Отправляются все настраиваемые поля насоса. Было только {dpms}:
+          //   выбор «Дополнительный насос» (usr) и пауза dpdp до устройства не
+          //   доходили. Тип (type) не отправляется — его задаёт «железо» (NVS).
+          deviceRequest('/settings/pump', { method: 'POST', data: {dpms: data.dpms, dpdp: data.dpdp, usr: data.usr} })
           .then((res) => {
             log(res)
           })
@@ -740,7 +744,10 @@ const store = createStore({
       if (mode == store.state.OILER_TRAINING) {
         rest_str = '/state/training'
       }
-      deviceRequest(rest_str)
+      // Promise возвращается: store.dispatch отдаёт его вызывающему, и тот может
+      // дождаться ответа (system.svelte шлёт команду насоса только после
+      // /state/pumping — прошивка выполняет её лишь в режиме прокачки).
+      return deviceRequest(rest_str)
       .catch(() => {
         // f7.alert не существует: было TypeError вместо сообщения пользователю.
         commandFailed('Нет связи с блоком управеления. Команда не выполнена')
