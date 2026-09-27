@@ -139,6 +139,7 @@
     import Ranges from '../../components/range-param.svelte'
     import store from '../../js/store.js';
     import log from '../../js/debug'
+    import {pumpMaxDpMs, typesOil} from '../../js/pumpType.js'
 
     let connected = useStore('connected', (value) => connected = value);
     let pump = useStore('pump', (value) => pump = value);
@@ -146,7 +147,6 @@
     //console.log('connect:', connected)
 /* TODO: максимальный объем выдаваемый насосом 2 мл/мин для KAMOER */
 
-    const typesOil = {ATF: 0, TAD: 1}
     let Oil// = typesOil.ATF
     //let T = pump.period // используется для режима настройки - пауза между каплями (фиксированное)
     let T = 0
@@ -172,16 +172,8 @@
     //   а любое её движение отправляло dpms = 0.
     //   Неизвестный тип — как 'A' (то же правило у прошивки, pumpDefaultDpMs):
     //   самый короткий предел, лишнего масла насос не подаст.
-    $: pumpType = (pump && pump.type) ? pump.type[0] : 'A'
-    $: {
-      T = 500 //  'A' — самодельный насос (устаревшее)
-      if (pumpType == 'B') T = 5000 // перистальтический насос
-      if (pumpType == 'C') { // мембранный насос с клапаном
-        T = 1000
-        if (is_atf) T = 500
-        if (is_tad17) T = 2000
-      }
-    }
+    //   Правило общее со страницей ручного режима — js/pumpType.js.
+    $: T = pumpMaxDpMs(pump && pump.type, Oil)
     //$: if ((is_atf) && (ver.hw[0] == 'C')) T = T/2
     //$: if ((is_tad17) && (ver.hw[0] == 'C')) T = T*2
 

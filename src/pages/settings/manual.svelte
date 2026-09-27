@@ -27,23 +27,34 @@
   import Ranges from '../../components/range-param.svelte'
   import store from '../../js/store.js';
   import log from '../../js/debug.js'
+  import {pumpMaxDpMs} from '../../js/pumpType.js'
 
 
   let connected = useStore('connected', (value) => connected = value);
   let manual = useStore('manual', (value) => manual = value);
+  let pump = useStore('pump', (value) => pump = value);
 
   let tmpManual = manual
-  let dpms_rel = Math.trunc(tmpManual.pump.dpms * 100 / tmpManual.pump.dpdp);
+
+  // ! Шкала объёма — время включения dpms в процентах от предела T по типу насоса,
+  //   как на странице насоса (js/pumpType.js: B — 5000 мс, C — 1000/500/2000,
+  //   A и неизвестный — 500). Раньше это была доля от «таймера» dpdp (5…90 %), и
+  //   насос B нельзя было настроить дольше 1,8 с, а значение с устройства
+  //   (MAN.PMP.dp=1000 при dpdp=800 — 125 %) уводило ползунок за правый край.
+  //   Показ ограничен пределами шкалы; время включения от «таймера» не зависит.
+  $: T = pumpMaxDpMs(pump && pump.type, localStorage.getItem('oil'))
+  const volMin = 5
+  const volMax = 100
 
   $: if (!connected) document.location.reload()
 
   $: rangeValues = [
       {
           title: $t('settings.manual.oilvolume'),
-          value: dpms_rel,//Math.trunc(tmpManual.pump.dpms * 100 / tmpManual.pump.dpdp),
+          value: Math.min(Math.max(Math.round(tmpManual.pump.dpms * 100 / T), volMin), volMax),
           name_value: "%",
-          minValue: 5, // 0.1
-          maxValue: 90,// 1.1
+          minValue: volMin,
+          maxValue: volMax,
           stepValue: 5, // 0.05
           // sacaleSubSteps: 1,
           scale: false,
@@ -53,8 +64,7 @@
           icon: "icon-drop",
           icon2: "icon-dropfill",
           rangeChange: (e)=>{
-            dpms_rel = e;
-            tmpManual.pump.dpms = tmpManual.pump.dpdp * (e / 100);
+            tmpManual.pump.dpms = Math.round(T * e / 100);
             store.dispatch('sendManual', tmpManual);
           }
       },
@@ -77,8 +87,6 @@
           }
       }
   ]
-
-  $: tmpManual.pump.dpms = tmpManual.pump.dpdp * (dpms_rel / 100);
 
   function outScaleLabel(e) {
     return Math.round(e/10) * 10

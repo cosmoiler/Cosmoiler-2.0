@@ -657,6 +657,10 @@ const store = createStore({
     sendManual({state}, data) {
       state.manual = data
       state.manual = state.manual
+      // ! Настройки ручного режима применяются на ходу: если насос ручного режима
+      //   работает, прошивка сразу перезапускает его с новыми параметрами. Поэтому
+      //   задержка отправки короткая (300 мс — только чтобы не слать каждый шаг
+      //   ползунка), а не общие 2 с.
       deferSend('manual', () => {
           deviceRequest('/settings/manual', { method: 'POST', data: state.manual })
           .then((res) => {
@@ -670,7 +674,7 @@ const store = createStore({
           })
           state.fChngSettings = { status: true, id: [...new Set([...state.fChngSettings.id, state.manual.id])]};
           log("send Pump = ", state.manual);
-      })
+      }, 300)
     },
 
     sendPump({state}, data) {
