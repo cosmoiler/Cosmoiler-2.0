@@ -2,6 +2,16 @@
   name="root"
   class={`page`}>
 
+    <!--
+      ! Страница параметров классификатора «трасса / город» открывается ТОЛЬКО
+      ! вводом адреса http://<блок>/route/cfg — ссылок на неё в интерфейсе нет
+      ! (она для калибровки, docs/route.md §8). Прошивка отдаёт на этот адрес
+      ! тот же index.html (маршрут SPA), а здесь по location.pathname вместо
+      ! вкладок показывается одно представление с этой страницей.
+    -->
+    {#if routeCfgOnly}
+    <View main url="/route/cfg/" animate={false} class="safe-areas"/>
+    {:else}
     <Views
         init={true}
         tabs
@@ -46,6 +56,7 @@
           <View id={id} name={name} main={main} tab={tab} tabActive={tabActive} url={url} animate={true} class="safe-areas"/>
         {/each}
     </Views>
+    {/if}
 </Page>
 
 
@@ -63,6 +74,10 @@
 
 
     let connected = useStore('connected', (value) => connected = value);
+
+    // Адрес страницы параметров классификатора (см. разметку выше). Читается
+    // один раз: переходов между этим режимом и вкладками нет.
+    const routeCfgOnly = window.location.pathname.replace(/\/+$/, '') === '/route/cfg';
 
     /**
      * ! Узкий экран: подписи в таббаре не умещаются.

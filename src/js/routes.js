@@ -15,6 +15,8 @@ import SystemPage from '../pages/service/system.svelte';
 import UpdatePage from '../pages/service/update.svelte';
 import AboutPage from '../pages/service/about.svelte';
 import DiagPage from '../pages/service/diag.svelte';
+// Отдельная страница (открывается только адресом /route/cfg, см. appview.svelte)
+import RoutePage from '../pages/route.svelte';
 
 import NotFoundPage from '../pages/404.svelte';
 
@@ -74,6 +76,12 @@ var routes = [
   {
     path: '/service/about',
     component: AboutPage,
+  },
+  {
+    // Параметры классификатора «трасса / город». Ссылок на страницу в
+    // интерфейсе нет: она для калибровки (docs/route.md §8).
+    path: '/route/cfg/',
+    component: RoutePage,
   },
   {
     path: '(.*)',

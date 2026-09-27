@@ -19,11 +19,13 @@
 
 <!--   <link rel="apple-touch-icon" sizes="120x120" href="icon_120x120.png">
   <link rel="apple-touch-icon" sizes="180x180" href="icon_180x180.png"> -->
-  <link rel="icon" type="image/png" sizes="32x32" href="favicon32.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="favicon16.png">
+  <!-- Пути от корня: страница открывается и с вложенного адреса (/route/cfg),
+       тогда относительный «favicon32.png» превратился бы в /route/favicon32.png (404). -->
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon16.png">
   <!-- <link rel="manifest" href="manifest.json"> -->
-  <link rel="manifest" href="manifest.web" />
-  <script async src="pwacompat.min.js"></script>
+  <link rel="manifest" href="/manifest.web" />
+  <script async src="/pwacompat.min.js"></script>
 
 
 </head>

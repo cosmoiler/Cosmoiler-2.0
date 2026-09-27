@@ -289,6 +289,47 @@ function deferSend(key, fn, delay = 2000) {
   sendTimers[key] = setTimeout(fn, delay);
 }
 
+/**
+ * Заводские параметры классификатора «трасса / город» — те же числа, что
+ * defaults::kOdoRoute в прошивке (ConfigTypes.hpp) и nvs/cosmoiler_NVS_config.csv.
+ * Имена полей — хвосты ключей NVS «ODO.SMR.*» (контракт — docs/config.md §1.1).
+ */
+export const ROUTE_DEFAULTS = Object.freeze({
+  vhi: 90, vstp: 5, vgo: 10,          // км/ч: «высокая скорость», стоим, поехали
+  thwy: 65, tcty: 45,                 // %: порог балла трассы / города
+  cnfw: 2,                            // окон подряд для смены состояния
+  dwell: 300, stdst: 1000, trip: 1500, park: 180, // с, м, м, с
+  wdst: 1500, wtm: 120,               // окно наблюдения: м, с
+  wcrs: 30, wnst: 15, wstb: 10, wrun: 30, wsdn: 20 // веса ×10
+});
+
+/**
+ * Проверка набора параметров классификатора — та же, что routeCfgValid() в
+ * прошивке: недопустимый набор устройство отклонит целиком (500, status:false).
+ * @returns {string|null} ключ перевода с причиной или null, если набор допустим.
+ */
+export function routeCfgError(r) {
+  if (!(r.vstp > 0 && r.vstp < r.vgo && r.vgo < r.vhi)) return 'route.cfg.err.speed';
+  if (!(r.thwy <= 100 && r.tcty < r.thwy)) return 'route.cfg.err.threshold';
+  if (!(r.cnfw > 0 && r.wdst > 0 && r.wtm > 0 && r.park > 0)) return 'route.cfg.err.zero';
+  if (!(r.wcrs + r.wnst + r.wstb + r.wrun + r.wsdn > 0)) return 'route.cfg.err.weights';
+  return null;
+}
+
+/** Полный адрес ресурса устройства (для ссылок, например выгрузки журнала). */
+export function deviceUrl(path) {
+  return 'http://' + uri() + path;
+}
+
+/** Ответ прошивки на запись настроек: {"status":true|false} (при отказе ещё и HTTP 500). */
+function statusOk(response) {
+  try {
+    return JSON.parse(response.data).status === true;
+  } catch (err) {
+    return false;
+  }
+}
+
 const store = createStore({
   state: {
     telemetryInterval: 0,
@@ -322,7 +363,10 @@ const store = createStore({
           { dst_m: 7000, num: 5, imp_m: 0, n: 10, cycles: 0 },
           { dst_m: 3000, num: 1, imp_m: 0, n: 3, cycles: 0 }
       ],
-      wheel: { d: 17, w: 150, h: 70, l: 2016 }
+      wheel: { d: 17, w: 150, h: 70, l: 2016 },
+      // Классификатор «трасса / город» (NVS ODO.SMR.*, docs/route.md §3.1).
+      // Значения — целые, как в NVS: пороги балла в %, веса ×10, времена в с.
+      route: { ...ROUTE_DEFAULTS }
     },
     timer: {
       id: "/time.json",
@@ -632,6 +676,40 @@ const store = createStore({
         log("send Dist = ", state.odometer)
       })
 
+    },
+
+    /**
+     * Параметры классификатора (страница /route/cfg). Отправляются сразу, без
+     * deferSend: это явное действие по кнопке «Сохранить», а результат нужен
+     * странице — прошивка отклоняет недопустимый набор целиком.
+     * @returns {Promise<boolean>} true — сохранено.
+     */
+    async sendRoute({state}, route) {
+      let ok = false;
+      try {
+        const res = await deviceRequest('/settings/trip', { method: 'POST', data: { route } });
+        ok = statusOk(res);
+      } catch (err) {
+        ok = false;
+      }
+      // Показать то, что действительно лежит в устройстве.
+      try {
+        const res = await deviceRequest('/settings/trip');
+        state.odometer = JSON.parse(res.data);
+      } catch (err) { /* связь пропала — страница покажет ошибку */ }
+      return ok;
+    },
+
+    /** Состояние классификатора: GET /route/get (docs/route.md §8). */
+    async routeInfo() {
+      const res = await deviceRequest('/route/get');
+      return JSON.parse(res.data);
+    },
+
+    /** Очистить калибровочный журнал перед новой поездкой. */
+    async routeClear() {
+      const res = await deviceRequest('/route/clear');
+      return statusOk(res);
     },
 
     sendTime({state}, data) {
