@@ -387,6 +387,21 @@ const store = createStore({
       usr: false, // пользовательский насос
       type: ""    // тип насоса (PMP.type): 'A', 'B', 'C' — от него предел dpms в pump.svelte
     },
+    // Масло (/settings/oil, firmware docs/oil.md): lvl — ручка дозы микропорций
+    // −5…+5 (шаг ×1.25, пишется), cap — объём бачка, мл, q — расход насоса,
+    // мкл/с × 10, micro — прошивка подаёт масло микропорциями (только чтение).
+    //
+    // ! micro решает, какие настройки показывать: при микропорциях пресеты
+    //   расстояния/времени и объём насоса на подачу не влияют и спрятаны, доза
+    //   задаётся ручкой на странице «Масло». Прошивка без секции масла (до
+    //   27.09.2026) её не отдаёт — остаётся false, интерфейс прежний.
+    oil: {
+      id: "/oil.json",
+      lvl: 0,
+      cap: 90,
+      q: 167,
+      micro: false
+    },
     system: {
       id: "/system.json",
       pn: "",
@@ -437,6 +452,11 @@ const store = createStore({
           R1: 200000,
           R2: 49900
         },
+        { // 6 - oil (прошивка с 27.09.2026, docs/oil.md)
+          oil: 100,   // Остаток масла в бачке, %
+          km: -1,     // Хватит на ~N км (-1 — оценки ещё нет)
+          low: 0      // 1 — мало масла
+        },
       ]
     },
     verfs: "5.0",
@@ -461,6 +481,7 @@ const store = createStore({
     timer:        ({state}) => state.timer,
     manual:       ({state}) => state.manual,
     pump:         ({state}) => state.pump,
+    oil:          ({state}) => state.oil,
     telemetry:    ({state}) => state.telemetry,
     mode:         ({state}) => state.mode,
     system:       ({state}) => state.system,
@@ -507,6 +528,10 @@ const store = createStore({
           });
           deviceRequest('/settings/manual').then((response) => { state.manual = JSON.parse(response.data) });
           deviceRequest('/settings/pump').then((response) => { state.pump = JSON.parse(response.data) });
+          // Прошивка до 27.09.2026 секции масла не знает — остаются умолчания.
+          deviceRequest('/settings/oil')
+            .then((response) => { state.oil = JSON.parse(response.data) })
+            .catch(() => {});
           deviceRequest('/settings/system').then((response) => {
             state.system = JSON.parse(response.data)
             if (ToBoolean(state.system.gps) == false)
@@ -776,6 +801,56 @@ const store = createStore({
           log("send Pump = ", state.pump);
       });
 
+    },
+
+    /**
+     * Ручка дозы «меньше/больше» (firmware docs/oil.md). Прошивка применяет её
+     * к микропорциям сразу после записи, поэтому задержка короткая (300 мс —
+     * только чтобы не слать каждый шаг ползунка), как у ручного режима.
+     */
+    sendOil({state}, lvl) {
+      state.oil.lvl = lvl
+      state.oil = state.oil
+      deferSend('oil', () => {
+        deviceRequest('/settings/oil', { method: 'POST', data: { lvl: state.oil.lvl } })
+          .then((res) => { log(res) })
+          .catch((err) => {
+            commandFailed("Команда не выполнена!")
+            deviceRequest('/settings/oil')
+              .then((response) => { state.oil = JSON.parse(response.data) })
+          })
+        log("send Oil = ", state.oil)
+      }, 300)
+    },
+
+    /**
+     * Бачок заправлен: GET /oil/refill?e=1 — «был почти пуст» (прошивка
+     * пересчитает расход насоса), без e — просто заправка. Затем свежие
+     * остаток (телеметрия) и расход (секция масла).
+     * @returns {Promise<boolean>} true — прошивка записала заправку.
+     */
+    async oilRefill({state}, wasEmpty) {
+      let ok = false;
+      try {
+        const res = await deviceRequest('/oil/refill' + (wasEmpty ? '?e=1' : ''));
+        ok = statusOk(res);
+      } catch (err) {
+        ok = false;
+      }
+      try {
+        const tel = await deviceRequest('/telemetry/get');
+        state.telemetry = JSON.parse(tel.data);
+        const oil = await deviceRequest('/settings/oil');
+        state.oil = JSON.parse(oil.data);
+      } catch (err) { /* связь пропала — страница покажет ошибку */ }
+      return ok;
+    },
+
+    /** Разовый запрос телеметрии (остаток масла на странице «Масло»). */
+    refreshTelemetry({state}) {
+      deviceRequest('/telemetry/get')
+        .then((response) => { state.telemetry = JSON.parse(response.data) })
+        .catch(() => { /* связь отслеживает сторож по lastOkAt */ })
     },
 
     sendMode({state}, data) {

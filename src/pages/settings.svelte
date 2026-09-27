@@ -41,6 +41,17 @@
     <Tabs >
       <Tab id="tab-trip" tabActive >
         <List>
+          {#if oil.micro}
+          <!-- ! Микропорции: доза — ручкой на странице «Масло» (там же макс.
+               скорость), пресеты расстояния и объём насоса на подачу не влияют. -->
+          {#snippet microOilMedia()}<Icon icon={oilItem.icon} style="font-size: {oilItem.size}px" />{/snippet}
+          <ListItem title={oilItem.title} link={oilItem.link} class={`settings-main__list-item`}
+            media={microOilMedia} footer={$t('settings.oil.description.micro')}/>
+          {#snippet microSensorMedia()}<Icon icon={items_odo[2].icon} style="font-size: {items_odo[2].size}px" />{/snippet}
+          {#snippet microSensorAfter()}<span>{sensorMark}</span>{/snippet}
+          <ListItem title={items_odo[2].title} link={items_odo[2].link} class={`settings-main__list-item`}
+            media={microSensorMedia} after={microSensorAfter} footer={items_odo[2].footer}/>
+          {:else}
           {#each items_odo.slice(0,2) as {link, title, icon, size, footer}}
             <!-- ! Сниппеты объявлены внутри {#each}: они захватывают переменные
                  цикла, поэтому для каждого элемента получается своё содержимое.
@@ -54,16 +65,27 @@
           {#snippet odoAfterSlot()}<span>{sensorMark}</span>{/snippet}
           <ListItem title={items_odo[2].title} link={items_odo[2].link} class={`settings-main__list-item`}
             media={odoMediaSlot} after={odoAfterSlot} footer={items_odo[2].footer}/>
+          {#snippet oilMediaSlot()}<Icon icon={items_odo[3].icon} style="font-size: {items_odo[3].size}px" />{/snippet}
+          <ListItem title={items_odo[3].title} link={items_odo[3].link} class={`settings-main__list-item`}
+            media={oilMediaSlot} footer={items_odo[3].footer}/>
+          {/if}
         </List>
       </Tab>
       <Tab id="tab-time" >
         <List>
+          {#if oil.micro}
+          <!-- Микропорции: у таймера только доза (время пресетов не используется). -->
+          {#snippet microTmrOilMedia()}<Icon icon={oilItem.icon} style="font-size: {oilItem.size}px" />{/snippet}
+          <ListItem title={oilItem.title} link={oilItem.link} class={`settings-main__list-item`}
+            media={microTmrOilMedia} footer={$t('settings.oil.description.micro')}/>
+          {:else}
           {#each items_timer as {link, title, icon, size, footer}}
             {#snippet mediaSlot()}<Icon icon={icon} style="font-size: {size}px" />{/snippet}
             {#snippet footerSlot()}{footer}{/snippet}
             <ListItem link={link} {title} class={`settings-main__list-item`}
               media={mediaSlot} footer={footerSlot} />
           {/each}
+          {/if}
         </List>
       </Tab>
       <Tab id="tab-manual" >
@@ -101,7 +123,17 @@
   let connected = useStore('connected', (value) => connected = value);
   let odometer = useStore('odometer', (value) => odometer = value);
   let gnssPresent = useStore('gnssPresent', (value) => gnssPresent = value);
+  let oil = useStore('oil', (value) => oil = value);
 
+
+  // Масло: остаток, ручка дозы, заправка — одна страница для «Одометра» и «Таймера».
+  const oilItem = {
+    link: '/settings/oil/',
+    title: $t('settings.oil.title'),
+    footer: $t('settings.oil.description'),
+    icon: 'icon-addoil',
+    size: 26
+  }
 
   let items_odo = [
     {
@@ -118,6 +150,8 @@
       icon: 'icon-pump', size: 28
     },
     //{link: '#', title: 'Датчик',  footer: "", icon: 'icon-sensor', size: 28},
+    // ! Порядок важен: разметка вкладки берёт items_odo.slice(0,2) циклом, а
+    //   «Датчик» — отдельной строкой как items_odo[2]. «Масло» — items_odo[3].
     {
       link: '/settings/odometer/sensor/',
       title: $t('settings.sensor.title'),
@@ -125,6 +159,7 @@
       icon: 'icon-sensor',
       size: 28
     },
+    oilItem,
   ]
 
   let items_timer = [
@@ -142,6 +177,7 @@
       icon: 'icon-pump',
       size: 28
     },
+    oilItem,
   ]
 
   let items_manual = [

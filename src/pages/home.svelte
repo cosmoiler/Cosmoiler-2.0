@@ -103,6 +103,18 @@
   let odometer = useStore('odometer', (value) => odometer = value);
   let timer = useStore('timer', (value) => timer = value);
   let mode = useStore('mode', (value) => mode = value);
+  let oil = useStore('oil', (value) => oil = value);
+  let telemetry = useStore('telemetry', (value) => telemetry = value);
+
+  // ! Микропорции (oil.micro): расстояния и время пресетов на подачу не влияют,
+  //   поэтому под режимами — доза (ручка «меньше/больше»), ОФФРОУД ×3 и остаток
+  //   масла (params[6] телеметрии; у прошивки без него — не показываем).
+  $: microIcons = [
+    {name: "icon-dropfill", text: $t('home.setting.dose', {values: {p: (oil.lvl > 0 ? '+' : '') + oil.lvl}})},
+    {name: "icon-off-road", text: "×3"},
+    ...((telemetry && telemetry.params && telemetry.params[6])
+        ? [{name: "icon-addoil", text: telemetry.params[6].oil + " %"}] : []),
+  ]
 
   let fmodeOdometer
   let fmodeTimer
@@ -124,7 +136,7 @@
         titleIcon: "icon-route",
         gpsIcon: "icon-gps",
         gnss: gnssPresent.gps,
-        icons: [
+        icons: oil.micro ? microIcons : [
           {name: "icon-city", text: $t('home.setting.trip', {values: {p: odometer.presets[store.state.presets.CITY].dst_m / 1000}})},
           {name: "icon-way", text: $t('home.setting.trip', {values: {p: odometer.presets[store.state.presets.WAY].dst_m / 1000}})},
           {name: "icon-off-road", text: $t('home.setting.trip', {values: {p: odometer.presets[store.state.presets.OFFROAD].dst_m / 1000}})},
@@ -147,7 +159,7 @@
         title: $t("home.time.title").toUpperCase(),
         subtitle: $t("home.time.subtitle"),
         titleIcon: "icon-timer",
-        icons: [
+        icons: oil.micro ? microIcons : [
           {name: "icon-city", text: $t('home.setting.time', {values: {p: timer.presets[store.state.presets.CITY].time}})},
          /*  {name: "icon-way", text: $t('home.setting.time', {values: {p: time.presets[1].dp_time}})}, */
           {name: "icon-off-road", text: $t('home.setting.time', {values: {p: timer.presets[store.state.presets.OFFROAD].time}})},

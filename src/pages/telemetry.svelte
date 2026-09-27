@@ -40,6 +40,23 @@
   let timer = useStore('timer', (value) => timer = value)
   let gnssPresent = useStore('gnssPresent', (value) => gnssPresent = value)
   let connected = useStore('connected', (value) => connected = value);
+  let oil = useStore('oil', (value) => oil = value);
+
+  // ! Микропорции (oil.micro, docs/oil.md): params[0].dst — сколько метров до
+  //   следующей порции, а не остаток участка пресета; шкала — до 2 км (порция
+  //   без учёта времени езды набирается за ~2 км). Вместо расстояния/времени
+  //   пресета у иконки пресета — доза (ручка «меньше/больше»).
+  const MICRO_SCALE_M = 2000
+  let doseText = (lvl) => $t('home.setting.dose', {values: {p: (lvl > 0 ? '+' : '') + lvl}})
+  let presetValueOdo = (telemetry) => oil.micro
+    ? doseText(oil.lvl)
+    : (odometer.presets[indexPreset(telemetry)].dst_m/1000).toFixed() + $t("all.km")
+  let presetValueTmr = (telemetry) => oil.micro
+    ? doseText(oil.lvl)
+    : timer.presets[indexPreset(telemetry)].time + $t("all.seconds")
+  let remainsScale = (telemetry) => oil.micro
+    ? Math.min(remainsTrip(odometer, gnssPresent.gps, telemetry.params[nameParams.ODOMETER]) / MICRO_SCALE_M, 1)
+    : remainsTrip(odometer, gnssPresent.gps, telemetry.params[nameParams.ODOMETER])/odometer.presets[indexPreset(telemetry)].dst_m
 
 
   const MAXSPEED = 250
@@ -50,7 +67,16 @@
     PUMP: 2,
     MODE: 3,
     GPS: 4,
-    VOLTAGE: 5
+    VOLTAGE: 5,
+    OIL: 6
+  }
+
+  // Остаток масла в бачке (params[6], прошивка с 27.09.2026, docs/oil.md).
+  // У старой прошивки элемента нет — иконку не рисуем.
+  let oilIcon = (telemetry) => {
+    const o = telemetry.params[nameParams.OIL]
+    if (!o) return null
+    return { icon: "icon-addoil", value: o.oil + "%", alarm: o.low == 1 }
   }
 
   let valueTimer = (data) => {
@@ -86,7 +112,7 @@
       if (!telemetry.params[nameParams.GPS].fix)
         return {
           icon: "icon-clock",
-          value: timer.presets[indexPreset(telemetry)].time + $t("all.seconds")
+          value: presetValueTmr(telemetry)
         }
       return {
           icon: "icon-gps",
@@ -126,6 +152,7 @@ $:  dataCardTele = [
       gauge: [],
       icons: [
         (gnssPresent.gps) ? {icon: "icon-gps", value: telemetry.params[nameParams.GPS].sat} : null,
+        oilIcon(telemetry),
         {
           icon: "icon-accum",
           value: voltage(telemetry.params[nameParams.VOLTAGE]) + $t("all.voltage"),
@@ -143,16 +170,16 @@ $:  dataCardTele = [
           text: $t("all.speed"),
           units: $t("all.kmh") },
         {
-          value: remainsTrip(odometer, gnssPresent.gps, telemetry.params[nameParams.ODOMETER])/odometer.presets[indexPreset(telemetry)].dst_m,
+          value: remainsScale(telemetry),
           valueText: (remainsTrip(odometer, gnssPresent.gps, telemetry.params[nameParams.ODOMETER])/1000).toFixed(1),
           labelText: (telemetry.params[nameParams.ODOMETER].v / 1000).toFixed(1),
-          text: $t("all.distance"),
+          text: oil.micro ? $t("telemetry.portion") : $t("all.distance"),
           units: $t("all.km") }
       ],
       icons: [
         { // 1-я иконка
           icon: iconsPreset[indexPreset(telemetry)],
-          value: (odometer.presets[indexPreset(telemetry)].dst_m/1000).toFixed() + $t("all.km")
+          value: presetValueOdo(telemetry)
         },
         { // 2-я иконка
           icon: "icon-pump", // насос
@@ -160,6 +187,7 @@ $:  dataCardTele = [
         },
         // 3-я иконка
         iconOdometerSensor(), // часы спутник сенсор
+        oilIcon(telemetry),   // остаток масла
         { // 4-я иконка
           icon: "icon-accum", // аккумулятор
           value: voltage(telemetry.params[nameParams.VOLTAGE]) + $t("all.voltage"),
@@ -179,8 +207,9 @@ $:  dataCardTele = [
           units: "" }
       ],
       icons: [
-        {icon: iconsPreset[indexPreset(telemetry)], value: timer.presets[indexPreset(telemetry)].time + $t("all.seconds")},
+        {icon: iconsPreset[indexPreset(telemetry)], value: presetValueTmr(telemetry)},
         {icon: "icon-pump", value: telemetry.params[nameParams.PUMP].v},
+        oilIcon(telemetry),
         {
           icon: "icon-accum",
           value: voltage(telemetry.params[nameParams.VOLTAGE]) + $t("all.voltage"),
@@ -241,9 +270,10 @@ $:  dataCardTele = [
           units: "" }
       ],
       icons: [
-        {icon: iconsPreset[indexPreset(telemetry)], value: timer.presets[indexPreset(telemetry)].time + $t("all.seconds")},
+        {icon: iconsPreset[indexPreset(telemetry)], value: presetValueTmr(telemetry)},
         {icon: "icon-pump", value: telemetry.params[nameParams.PUMP].v},
         (gnssPresent.gps) ? {icon: "icon-gps", value: telemetry.params[nameParams.GPS].sat, alarm: telemetry.params[nameParams.GPS].fake} : null,
+        oilIcon(telemetry),
         {
           icon: "icon-accum",
           value: voltage(telemetry.params[nameParams.VOLTAGE]) + $t("all.voltage"),

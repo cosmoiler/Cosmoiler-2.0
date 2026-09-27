@@ -9,6 +9,7 @@ import TimerPresetsPage from '../pages/settings/timerPresets.svelte';
 import ManualPage from  '../pages/settings/manual.svelte';
 import PumpPage from '../pages/settings/pump.svelte';
 import SensorPage from '../pages/settings/sensor.svelte';
+import OilPage from '../pages/settings/oil.svelte';
 // Service pages
 import WifiPage from '../pages/service/wifi.svelte';
 import SystemPage from '../pages/service/system.svelte';
@@ -56,6 +57,11 @@ var routes = [
   {
       path: '/settings/pump/',
       component: PumpPage
+  },
+  {
+      // Масло: остаток, ручка дозы, заправка (firmware docs/oil.md)
+      path: '/settings/oil/',
+      component: OilPage
   },
   {
     path: '/service/wifi',
