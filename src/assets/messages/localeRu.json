@@ -75,8 +75,8 @@
     "settings.manual.oilvolume": "Объем масла",
 
     "settings.oil.title": "Масло",
-    "settings.oil.description": "Остаток в бачке, доза «меньше/больше», заправка",
-    "settings.oil.description.micro": "Доза «меньше/больше», макс. скорость, остаток в бачке, заправка",
+    "settings.oil.description.odo": "Доза «меньше/больше», макс. скорость",
+    "settings.oil.description.tmr": "Доза «меньше/больше»",
     "settings.oil.maxspeed.hint": "Выше этой скорости масло не подаётся: порция откладывается и будет подана, когда скорость снизится.",
     "settings.oil.remains": "Остаток в бачке",
     "settings.oil.km": "Хватит примерно на {p} км",

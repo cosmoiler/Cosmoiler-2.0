@@ -395,12 +395,17 @@ const store = createStore({
     //   расстояния/времени и объём насоса на подачу не влияют и спрятаны, доза
     //   задаётся ручкой на странице «Масло». Прошивка без секции масла (до
     //   27.09.2026) её не отдаёт — остаётся false, интерфейс прежний.
+    //
+    // ! supported — не поле прошивки: ставится после успешного GET /settings/oil
+    //   (учёт масла есть и в прежнем алгоритме подачи). По нему «Сервис → Система»
+    //   показывает карточку «Заправка».
     oil: {
       id: "/oil.json",
       lvl: 0,
       cap: 90,
       q: 167,
-      micro: false
+      micro: false,
+      supported: false
     },
     system: {
       id: "/system.json",
@@ -530,7 +535,7 @@ const store = createStore({
           deviceRequest('/settings/pump').then((response) => { state.pump = JSON.parse(response.data) });
           // Прошивка до 27.09.2026 секции масла не знает — остаются умолчания.
           deviceRequest('/settings/oil')
-            .then((response) => { state.oil = JSON.parse(response.data) })
+            .then((response) => { state.oil = { ...JSON.parse(response.data), supported: true } })
             .catch(() => {});
           deviceRequest('/settings/system').then((response) => {
             state.system = JSON.parse(response.data)
@@ -817,7 +822,7 @@ const store = createStore({
           .catch((err) => {
             commandFailed("Команда не выполнена!")
             deviceRequest('/settings/oil')
-              .then((response) => { state.oil = JSON.parse(response.data) })
+              .then((response) => { state.oil = { ...JSON.parse(response.data), supported: true } })
           })
         log("send Oil = ", state.oil)
       }, 300)
@@ -841,16 +846,9 @@ const store = createStore({
         const tel = await deviceRequest('/telemetry/get');
         state.telemetry = JSON.parse(tel.data);
         const oil = await deviceRequest('/settings/oil');
-        state.oil = JSON.parse(oil.data);
+        state.oil = { ...JSON.parse(oil.data), supported: true };
       } catch (err) { /* связь пропала — страница покажет ошибку */ }
       return ok;
-    },
-
-    /** Разовый запрос телеметрии (остаток масла на странице «Масло»). */
-    refreshTelemetry({state}) {
-      deviceRequest('/telemetry/get')
-        .then((response) => { state.telemetry = JSON.parse(response.data) })
-        .catch(() => { /* связь отслеживает сторож по lastOkAt */ })
     },
 
     sendMode({state}, data) {

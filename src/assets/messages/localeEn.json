@@ -75,8 +75,8 @@
     "settings.manual.oilvolume": "Oil volume",
 
     "settings.oil.title": "Oil",
-    "settings.oil.description": "Tank level, less/more dose, refill",
-    "settings.oil.description.micro": "Less/more dose, max speed, tank level, refill",
+    "settings.oil.description.odo": "Less/more dose, max speed",
+    "settings.oil.description.tmr": "Less/more dose",
     "settings.oil.maxspeed.hint": "Above this speed no oil is supplied: the portion is postponed until the speed drops.",
     "settings.oil.remains": "Oil in the tank",
     "settings.oil.km": "Enough for about {p} km",

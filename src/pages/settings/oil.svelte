@@ -1,44 +1,19 @@
 <!--
-  ! Масло: остаток в бачке, ручка дозы «меньше/больше», заправка.
+  ! Масло: настройки дозы микропорций (firmware docs/oil.md, docs/oil-dose.md §7).
   !
-  ! Контракт с прошивкой (firmware docs/oil.md):
-  !   GET/POST /settings/oil — {lvl, cap, q}: пишется только lvl (−5…+5);
-  !   GET /oil/refill?e=1    — бачок заправлен, «был почти пуст» (прошивка
-  !                            пересчитает расход насоса), без e — просто заправка;
-  !   GET /telemetry/get     — params[6] = {oil: %, km: ~км или −1, low: 0|1}.
+  !   GET/POST /settings/oil — {lvl, cap, q, micro}: пишется только lvl (−5…+5).
   !
-  ! Остаток приходит телеметрией, а её опрос идёт только на вкладке «Телеметрия»,
-  ! поэтому здесь телеметрия запрашивается при входе на страницу и после заправки.
+  ! Страница открывается с вкладок «Одометр» (/settings/oil/) и «Таймер»
+  ! (/settings/oil/timer/, проп timer = true — routes.js). Остаток масла — на вкладке
+  ! «Телеметрия», заправка — в «Сервис → Система» (решение пользователя 28.09.2026).
 -->
 <Page
   name="oil"
-  class={`page`}
-  onPageBeforeIn={pageBeforeIn}>
+  class={`page`}>
 
   <Navbar title={$t('settings.oil.title')} />
 
   {#if connected}
-    <!-- Остаток масла в бачке -->
-    <div class="section-card">
-      <BlockTitle class="display-flex justify-content-space-between">
-        <span>{$t('settings.oil.remains')}</span>
-        <span style={low ? 'color: red' : 'color: var(--f7-theme-color-change-text)'}>{pct} %</span>
-      </BlockTitle>
-      <List>
-        <ListItem class="row-tint">
-          <div class="item-cell width-auto flex-shrink-0">
-            <Icon icon="icon-addoil" style={low ? 'font-size: 30px; color: red' : 'font-size: 30px'} />
-          </div>
-          <div class="item-cell item-cell--grow list-input__label list-input__label-text_color">
-            {km >= 0 ? $t('settings.oil.km', {values: {p: km}}) : $t('settings.oil.km.unknown')}
-          </div>
-        </ListItem>
-      </List>
-      {#if low}
-        <Block mediumInset><p style="color: red">{$t('settings.oil.low')}</p></Block>
-      {/if}
-    </div>
-
     <!-- Ручка дозы «меньше/больше» -->
     <div class="section-card">
       <Ranges {...doseRange} />
@@ -58,32 +33,14 @@
 
     <!-- ! Макс. скорость при микропорциях — здесь: страница пресетов, где она была,
          спрятана (её расстояния и капли на подачу не влияют), а порог действует —
-         выше него порции откладываются до снижения скорости. -->
-    {#if oil.micro}
+         выше него порции откладываются до снижения скорости. Только для одометра:
+         в режиме «Таймер» скорость неизвестна. -->
+    {#if oil.micro && !timer}
     <div class="section-card">
       <Ranges {...maxspRange} />
       <Block mediumInset><p><i>{$t('settings.oil.maxspeed.hint')}</i></p></Block>
     </div>
     {/if}
-
-    <!-- Заправка бачка -->
-    <div class="section-card">
-      <BlockTitle><span>{$t('settings.oil.refill.title')}</span></BlockTitle>
-      <List>
-        <ListItem class="row-tint">
-          <div class="item-cell width-auto flex-shrink-0 list-input__label list-input__label-text_color">{$t('settings.oil.refill.empty')}</div>
-          <div class="item-cell width-auto flex-shrink-4"><Toggle bind:checked={wasEmpty} /></div>
-        </ListItem>
-      </List>
-      <Block>
-        <Button fill large disabled={busy} onClick={refill}>{$t('settings.oil.refill.button')}</Button>
-      </Block>
-      <Block mediumInset>
-        <p><i>{$t('settings.oil.refill.p1')}</i></p>
-        <p><i>{$t('settings.oil.refill.p2')}</i></p>
-        <p><i>{$t('settings.oil.tank', {values: {p: oil.cap, q: flowText}})}</i></p>
-      </Block>
-    </div>
   {:else}
     <BlockTitle class={`block-title-noconnection__text`}>{$t('home.noconnect')}</BlockTitle>
   {/if}
@@ -91,25 +48,21 @@
 
 <script>
   import {
-    f7,
     Page,
     Navbar,
     BlockTitle,
     Block,
-    List,
-    ListItem,
-    Icon,
-    Toggle,
-    Button,
     useStore
   } from 'framework7-svelte';
   import {t} from '../../services/i18n.js';
   import Ranges from '../../components/range-param.svelte'
   import store from '../../js/store.js';
 
+  // true — страница открыта с вкладки «Таймер» (options.props маршрута).
+  export let timer = false
+
   let connected = useStore('connected', (value) => connected = value);
   let oil = useStore('oil', (value) => oil = value);
-  let telemetry = useStore('telemetry', (value) => telemetry = value);
   let odometer = useStore('odometer', (value) => odometer = value);
   let mapSettings = useStore('mapSettings', (value) => mapSettings = value);
 
@@ -134,19 +87,9 @@
   }
 
   let hint = false
-  let wasEmpty = false
-  let busy = false
 
   // Шаг ручки ×1.25 на деление (COSMOILER_DOSE_STEP_PCT, firmware docs/oil-dose.md §7).
   const STEP = 1.25
-
-  // params[6] есть только в прошивке с учётом масла (с 27.09.2026); у старой —
-  // показываем «полный бачок, оценки нет», а не падаем.
-  $: oilTele = (telemetry && telemetry.params && telemetry.params[6]) || {oil: 100, km: -1, low: 0}
-  $: pct = oilTele.oil
-  $: km = oilTele.km
-  $: low = oilTele.low == 1
-  $: flowText = (oil.q / 10).toFixed(1)
 
   $: doseRange = {
     title: $t('settings.oil.dose'),
@@ -165,24 +108,5 @@
       if (e !== oil.lvl)
         store.dispatch('sendOil', e)
     }
-  }
-
-  function pageBeforeIn() {
-    store.dispatch('refreshTelemetry')
-  }
-
-  function refill() {
-    const text = wasEmpty ? $t('settings.oil.refill.confirm.empty') : $t('settings.oil.refill.confirm')
-    f7.dialog.confirm(text, 'Cosmoiler', async () => {
-      busy = true
-      const ok = await store.dispatch('oilRefill', wasEmpty)
-      busy = false
-      if (ok) {
-        wasEmpty = false
-        f7.toast.show({ text: $t('settings.oil.refill.done'), closeTimeout: 2000, position: 'center' })
-      } else {
-        f7.dialog.alert($t('settings.oil.refill.error'), 'Cosmoiler')
-      }
-    })
   }
 </script>

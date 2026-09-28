@@ -16,6 +16,29 @@
 <!--   <CardTelemetry {...dataCardTele[telemetry.params[3].m]}  /> -->
 <div in:fade="{{delay: 50, duration: 300}}" out:fly="{{duration: 300}}">
     <CardTelemetry {...dataCardTele[md]}  />
+    <!-- ! Остаток масла в бачке (params[6], firmware docs/oil.md) — во всех режимах.
+         Перенесён со страницы «Масло» в настройках (решение пользователя 28.09.2026):
+         это показание, а не настройка. У прошивки без учёта масла params[6] нет —
+         карточки нет. -->
+    {#if oilTele}
+    <Card class='elevation-3'>
+      <CardHeader class={`card-header-tele`}>
+        <span>{$t('settings.oil.remains').toUpperCase()}</span>
+        <span style={oilTele.low == 1 ? 'color: red' : ''}>{oilTele.oil} %</span>
+      </CardHeader>
+      <CardContent padding={true}>
+        <div class="display-flex align-items-center">
+          <Icon icon="icon-addoil" style={oilTele.low == 1 ? 'font-size: 30px; color: red' : 'font-size: 30px'} />
+          <span style="margin-left: 12px">
+            {oilTele.km >= 0 ? $t('settings.oil.km', {values: {p: oilTele.km}}) : $t('settings.oil.km.unknown')}
+          </span>
+        </div>
+        {#if oilTele.low == 1}
+          <p style="color: red; margin-bottom: 0">{$t('settings.oil.low')}</p>
+        {/if}
+      </CardContent>
+    </Card>
+    {/if}
   </div>
 {/if}
 
@@ -27,6 +50,10 @@
     Page,
     Navbar,
     BlockTitle,
+    Card,
+    CardHeader,
+    CardContent,
+    Icon,
     useStore
   } from 'framework7-svelte';
   import {t} from '../services/i18n.js';
@@ -71,13 +98,9 @@
     OIL: 6
   }
 
-  // Остаток масла в бачке (params[6], прошивка с 27.09.2026, docs/oil.md).
-  // У старой прошивки элемента нет — иконку не рисуем.
-  let oilIcon = (telemetry) => {
-    const o = telemetry.params[nameParams.OIL]
-    if (!o) return null
-    return { icon: "icon-addoil", value: o.oil + "%", alarm: o.low == 1 }
-  }
+  // Остаток масла в бачке (params[6], прошивка с 27.09.2026, docs/oil.md) —
+  // отдельная карточка под карточкой режима. У старой прошивки элемента нет.
+  $: oilTele = telemetry.params[nameParams.OIL]
 
   let valueTimer = (data) => {
     let  myDate = new Date(0, 0, 0, 0, 0, 0, data.v);
@@ -152,7 +175,6 @@ $:  dataCardTele = [
       gauge: [],
       icons: [
         (gnssPresent.gps) ? {icon: "icon-gps", value: telemetry.params[nameParams.GPS].sat} : null,
-        oilIcon(telemetry),
         {
           icon: "icon-accum",
           value: voltage(telemetry.params[nameParams.VOLTAGE]) + $t("all.voltage"),
@@ -187,7 +209,6 @@ $:  dataCardTele = [
         },
         // 3-я иконка
         iconOdometerSensor(), // часы спутник сенсор
-        oilIcon(telemetry),   // остаток масла
         { // 4-я иконка
           icon: "icon-accum", // аккумулятор
           value: voltage(telemetry.params[nameParams.VOLTAGE]) + $t("all.voltage"),
@@ -209,7 +230,6 @@ $:  dataCardTele = [
       icons: [
         {icon: iconsPreset[indexPreset(telemetry)], value: presetValueTmr(telemetry)},
         {icon: "icon-pump", value: telemetry.params[nameParams.PUMP].v},
-        oilIcon(telemetry),
         {
           icon: "icon-accum",
           value: voltage(telemetry.params[nameParams.VOLTAGE]) + $t("all.voltage"),
@@ -273,7 +293,6 @@ $:  dataCardTele = [
         {icon: iconsPreset[indexPreset(telemetry)], value: presetValueTmr(telemetry)},
         {icon: "icon-pump", value: telemetry.params[nameParams.PUMP].v},
         (gnssPresent.gps) ? {icon: "icon-gps", value: telemetry.params[nameParams.GPS].sat, alarm: telemetry.params[nameParams.GPS].fake} : null,
-        oilIcon(telemetry),
         {
           icon: "icon-accum",
           value: voltage(telemetry.params[nameParams.VOLTAGE]) + $t("all.voltage"),

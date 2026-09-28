@@ -59,9 +59,15 @@ var routes = [
       component: PumpPage
   },
   {
-      // Масло: остаток, ручка дозы, заправка (firmware docs/oil.md)
+      // Масло: ручка дозы и макс. скорость (firmware docs/oil.md) — с вкладки «Одометр».
       path: '/settings/oil/',
       component: OilPage
+  },
+  {
+      // То же с вкладки «Таймер»: без макс. скорости — скорость в этом режиме неизвестна.
+      path: '/settings/oil/timer/',
+      component: OilPage,
+      options: { props: { timer: true } }
   },
   {
     path: '/service/wifi',

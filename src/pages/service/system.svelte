@@ -31,6 +31,32 @@
             </List>
         </div>
 
+    <!--
+      ! Заправка бачка (firmware docs/oil.md): GET /oil/refill?e=1 — «был почти
+      ! пуст» (блок уточнит расход насоса), без e — просто заправка. Перенесена со
+      ! страницы «Масло» в настройках (решение пользователя 28.09.2026): это
+      ! обслуживание, как прокачка. Только у прошивки с учётом масла (oil.supported).
+    -->
+        {#if oil.supported}
+        <div class="section-card">
+            <BlockTitle><span>{$t('settings.oil.refill.title')}</span></BlockTitle>
+            <List>
+                <ListItem class="row-tint">
+                    <div class="item-cell width-auto flex-shrink-0 list-input__label list-input__label-text_color">{$t('settings.oil.refill.empty')}</div>
+                    <div class="item-cell width-auto flex-shrink-4"><Toggle bind:checked={wasEmpty} /></div>
+                </ListItem>
+            </List>
+            <Block>
+                <Button fill large disabled={refillBusy} onClick={refill}>{$t('settings.oil.refill.button')}</Button>
+            </Block>
+            <Block mediumInset>
+                <p><i>{$t('settings.oil.refill.p1')}</i></p>
+                <p><i>{$t('settings.oil.refill.p2')}</i></p>
+                <p><i>{$t('settings.oil.tank', {values: {p: oil.cap, q: (oil.q / 10).toFixed(1)}})}</i></p>
+            </Block>
+        </div>
+        {/if}
+
     <!-- Управление яркостью светодиода -->
         <!-- Шапкой секции становится BlockTitle внутри <Ranges> -->
         <div class="section-card">
@@ -111,8 +137,9 @@
 
 <script>
     import {
+      f7,
       Page,
-     // Button,
+      Button,
       Block,
       List,
       ListItem,
@@ -134,6 +161,26 @@
     let system = useStore('system', (value) => system = value);
     let mapSettings = useStore('mapSettings', (value) => mapSettings = value);
     let pump = useStore('pump', (value) => pump = value);
+    let oil = useStore('oil', (value) => oil = value);
+
+    // --- Заправка бачка (карточка «Заправка») ---
+    let wasEmpty = false
+    let refillBusy = false
+
+    function refill() {
+      const text = wasEmpty ? $t('settings.oil.refill.confirm.empty') : $t('settings.oil.refill.confirm')
+      f7.dialog.confirm(text, 'Cosmoiler', async () => {
+        refillBusy = true
+        const ok = await store.dispatch('oilRefill', wasEmpty)
+        refillBusy = false
+        if (ok) {
+          wasEmpty = false
+          f7.toast.show({ text: $t('settings.oil.refill.done'), closeTimeout: 2000, position: 'center' })
+        } else {
+          f7.dialog.alert($t('settings.oil.refill.error'), 'Cosmoiler')
+        }
+      })
+    }
     //let locale = useStore('locale', (value) => locale = value);
     let locale = "ru"
 
