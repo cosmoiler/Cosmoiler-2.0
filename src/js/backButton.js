@@ -48,7 +48,11 @@ function depthOf(state) {
 /** Роутер представления на экране (активная вкладка или единственное представление). */
 function activeRouter() {
   const el = document.querySelector('.views.tabs > .view.tab-active');
-  const view = (el && el.f7View) || app.views.main;
+  if (el) return el.f7View ? el.f7View.router : null;
+  // Вкладки есть, но активной нет — момент смены вкладки между tabHide и tabShow
+  // (tabReset.js закрывает в нём страницы скрытой вкладки): роутера нет, глубина 0.
+  if (document.querySelector('.views.tabs')) return null;
+  const view = app.views.main; // единственное представление (/route/cfg)
   return view ? view.router : null;
 }
 

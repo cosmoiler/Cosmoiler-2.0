@@ -14,6 +14,7 @@
   import routes from '../js/routes';
   import store from '../js/store';
   import { initBackButton } from '../js/backButton.js';
+  import { initTabReset } from '../js/tabReset.js';
   import Main from '../pages/appview.svelte';
 
   // Framework7 Parameters
@@ -50,6 +51,8 @@
       // Call F7 APIs here
       store.dispatch('init')
       initBackButton(f7)
+      // Смена вкладки закрывает вложенную страницу (её выход: сохранение, /state/auto)
+      initTabReset(f7)
     });
   })
 
