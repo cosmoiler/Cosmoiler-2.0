@@ -27,6 +27,7 @@
         <span style={oilTele.low == 1 ? 'color: red' : ''}>{oilTele.oil} %</span>
       </CardHeader>
       <CardContent padding={true}>
+        <OilLevel oil={oilTele.oil} low={oilTele.low} />
         <div class="display-flex align-items-center">
           <Icon icon="icon-addoil" style={oilTele.low == 1 ? 'font-size: 30px; color: red' : 'font-size: 30px'} />
           <span style="margin-left: 12px">
@@ -58,6 +59,7 @@
   } from 'framework7-svelte';
   import {t} from '../services/i18n.js';
   import CardTelemetry from '../components/tele-card.svelte'
+  import OilLevel from '../components/oil-level.svelte'
   import store from '../js/store';
   import { fade, fly } from 'svelte/transition';
   import log from '../js/debug.js'

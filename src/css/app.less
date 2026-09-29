@@ -376,6 +376,53 @@
   color: var(--state-bad-color);
 }
 
+/*
+ * ! Индикатор остатка масла (components/oil-level.svelte) — сегменты, как
+ * указатель топлива на приборной панели (E — F).
+ *
+ * Цвет — только цвет темы (#5e3e29, решение пользователя 30.09.2026): горящие
+ * сегменты приглушаются по мере опустошения бачка — прозрачность приходит из
+ * компонента в --oil-level-alpha (1.0 полный … 0.35 пустой). Погашенные —
+ * едва заметная подложка того же цвета. Имена без префикса color- (F7 9, §6).
+ */
+.oil-level {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+.oil-level__label {
+  color: var(--color-subtitle-text);
+  font-weight: bolder;
+  font-size: 14px;
+  line-height: 1;
+  padding: 0 4px;
+}
+.oil-level__seg {
+  flex: 1;
+  height: 18px;
+  border-radius: 3px;
+  background-color: rgba(var(--f7-theme-color-rgb), 0.10);
+  transition: background-color 0.4s;
+}
+.oil-level__seg--on {
+  background-color: rgba(var(--f7-theme-color-rgb), var(--oil-level-alpha, 1));
+}
+// «Мало масла» (low): мигает последний горящий сегмент.
+.oil-level__seg--blink {
+  animation: oil-level-blink 1s step-end infinite;
+}
+@keyframes oil-level-blink {
+  50% {
+    background-color: rgba(var(--f7-theme-color-rgb), 0.10);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .oil-level__seg--blink {
+    animation: none;
+  }
+}
+
 .settings-main__list-item,
 .sensor__list-item {
   background-color: var(--theme-bg-color-light);
