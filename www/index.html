@@ -26,6 +26,13 @@
   <!-- <link rel="manifest" href="manifest.json"> -->
   <link rel="manifest" href="/manifest.web" />
   <script async src="/pwacompat.min.js"></script>
+  <!-- Запуск со значка на экране «Домой» — окном приложения, без адресной строки.
+       iPhone/iPad (Safari) читают это и по http:// — в отличие от Android, где
+       без https ярлык открывается вкладкой браузера. pwacompat добавляет те же
+       теги из manifest.web, но асинхронно; здесь они есть сразу. -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Cosmoiler">
 
 
   <script type="module" crossorigin src="/app.js"></script>
