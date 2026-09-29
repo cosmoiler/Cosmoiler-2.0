@@ -22,6 +22,14 @@
   //--f7-theme-color-tint: #7a5135;
 /*   --f7-toolbar-border-color: #f81212; */
   --theme-bg-color-light: #f8f8f3;
+
+  /* Цвета состояния значков подвала карточки телеметрии (tele-card.svelte).
+   * Приглушённые — под бежевый фон. «Сомнительно» — янтарный, а не оранжевый:
+   * оранжевый (#c87137) здесь фирменный акцент и читался бы как обычный текст.
+   * «Недостоверно»/тревога — всегда красный. */
+  --state-ok-color: #4c8a3f;
+  --state-warn-color: #d99a00;
+  --state-bad-color: #d32f2f;
 }
 /* Invert navigation bars to fill style */
 :root,
@@ -350,6 +358,22 @@
   margin-right: 0.2rem;
   font-size: var(--card-footer-icon-size);
   line-height: 1;
+}
+/*
+ * ! Состояние значка: цвет задаётся модификатором, а не инлайн-стилем.
+ * Имена — без префикса color-: в F7 9 MD-тема ловит `[class*='color-']`
+ * (см. range-param.svelte). Значок GPS: ok — ГНСС достоверен, warn —
+ * сомнительно, bad — недостоверно или подмена; без модификатора (нет фикса) —
+ * прежний цвет. Тревога напряжения (alarm) — тот же --bad.
+ */
+.card-footer-tele__icon--ok {
+  color: var(--state-ok-color);
+}
+.card-footer-tele__icon--warn {
+  color: var(--state-warn-color);
+}
+.card-footer-tele__icon--bad {
+  color: var(--state-bad-color);
 }
 
 .settings-main__list-item,

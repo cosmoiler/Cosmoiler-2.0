@@ -47,16 +47,12 @@
         {#each icons as icon}
         {#if icon}
             <div class="card-footer-tele__icon-text">
-                {#if icon.alarm}
-                    <Icon icon={icon.icon} class={`card-footer-tele__icon`} style='color: red;'/>
-<!--                     {#if visbl}
-                        <div transition:fade="{{delay: 500, duration: 700}}">
-                            <Icon icon={icon.icon} class={`card-footer-tele__icon`} style='color: red;'/>
-                        </div>
-                    {/if} -->
-                {:else}
-                    <Icon icon={icon.icon} class={`card-footer-tele__icon`} />
-                {/if}
+                <!--
+                  ! Цвет значка — модификатором класса (css/app.less):
+                  ! alarm (тревога, например напряжение) — красный; state ('ok' |
+                  ! 'warn' | 'bad') — состояние значка GPS по вердикту ГНСС.
+                -->
+                <Icon icon={icon.icon} class={`card-footer-tele__icon${iconMod(icon)}`} />
                 <!-- <Icon icon={icon.icon} size=var(--card-footer-icon-size) class={`card-footer-tele__icon`}/> -->
                 <span class="card-footer-tele__text">{icon.value}</span>
             </div>
@@ -82,6 +78,13 @@
     export let title = undefined
     export let gauge = undefined
     export let icons = undefined
+
+    // Модификатор цвета значка: тревога важнее состояния.
+    const iconMod = (icon) => {
+        if (icon.alarm) return ' card-footer-tele__icon--bad'
+        if (icon.state) return ` card-footer-tele__icon--${icon.state}`
+        return ''
+    }
 
 /*     let visbl = true
 

@@ -130,6 +130,25 @@
     if (data > 14.8) return true
   }
 
+  /**
+   * ! Значок GPS с числом спутников и цветом по вердикту ГНСС (params[4].q,
+   * прошивка — docs/telemetry.md §5): 'bad' (красный) — недостоверно или
+   * подмена; без цвета — нет фикса; 'warn' (янтарный) — сомнительно; 'ok'
+   * (зелёный) — достоверно. Порядок проверок важен: вердикт в прошивке
+   * переживает потерю фикса, поэтому «достоверно» без фикса — это «нет фикса»,
+   * а Bad сам снимает fix — поэтому красный проверяется первым.
+   * Прошивка без поля q (до 29.09.2026) — цвет только по fix.
+   */
+  let gpsIcon = (telemetry) => {
+    const gps = telemetry.params[nameParams.GPS]
+    let state = undefined
+    if (gps.q == 2 || gps.fake) state = 'bad'
+    else if (!gps.fix) state = undefined
+    else if (gps.q == 1) state = 'warn'
+    else state = 'ok'
+    return {icon: "icon-gps", value: gps.sat, state: state}
+  }
+
   let iconOdometerSensor = () => {
     if (odometer.sensor.gnss) {
       if (!telemetry.params[nameParams.GPS].fix)
@@ -137,11 +156,7 @@
           icon: "icon-clock",
           value: presetValueTmr(telemetry)
         }
-      return {
-          icon: "icon-gps",
-          value: telemetry.params[nameParams.GPS].sat,
-          alarm: telemetry.params[nameParams.GPS].fake
-      }
+      return gpsIcon(telemetry)
     }
     return {
       icon: "icon-sensor",
@@ -174,7 +189,7 @@ $:  dataCardTele = [
       title: $t('telemetry.off.title').toUpperCase(), // 0
       gauge: [],
       icons: [
-        (gnssPresent.gps) ? {icon: "icon-gps", value: telemetry.params[nameParams.GPS].sat} : null,
+        (gnssPresent.gps) ? gpsIcon(telemetry) : null,
         {
           icon: "icon-accum",
           value: voltage(telemetry.params[nameParams.VOLTAGE]) + $t("all.voltage"),
@@ -267,11 +282,7 @@ $:  dataCardTele = [
       title: $t('telemetry.training.title').toUpperCase(),
       gauge: [],
       icons: [
-        (gnssPresent.gps) ? {
-          icon: "icon-gps",
-          value: telemetry.params[nameParams.GPS].sat,
-          alarm: telemetry.params[nameParams.GPS].fake
-        } : null,
+        (gnssPresent.gps) ? gpsIcon(telemetry) : null,
         {
           icon: "icon-accum",
           value: voltage(telemetry.params[nameParams.VOLTAGE]) + $t("all.voltage"),
@@ -292,7 +303,7 @@ $:  dataCardTele = [
       icons: [
         {icon: iconsPreset[indexPreset(telemetry)], value: presetValueTmr(telemetry)},
         {icon: "icon-pump", value: telemetry.params[nameParams.PUMP].v},
-        (gnssPresent.gps) ? {icon: "icon-gps", value: telemetry.params[nameParams.GPS].sat, alarm: telemetry.params[nameParams.GPS].fake} : null,
+        (gnssPresent.gps) ? gpsIcon(telemetry) : null,
         {
           icon: "icon-accum",
           value: voltage(telemetry.params[nameParams.VOLTAGE]) + $t("all.voltage"),
