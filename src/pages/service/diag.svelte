@@ -38,10 +38,9 @@
     </AccordionToggle>
     <AccordionContent>
       <Block>
-        <p><b>Отсутствует Wi-Fi блока.</b></p>
-        <p> - выключите и включите зажигание. В течение 60 сек подключитесь к блоку;</p>
-        <p> - возможно включение Wi-Fi с помощью кнопки управления без выключения зажигания:
-          сделайте 4 или более коротких нажатия на кнопку.</p>
+        <p><b>{$t('service.diag.nowifi.title')}</b></p>
+        <p> - {$t('service.diag.nowifi.p1')}</p>
+        <p> - {$t('service.diag.nowifi.p2')}</p>
       </Block>
       {#if false}
       <Block>

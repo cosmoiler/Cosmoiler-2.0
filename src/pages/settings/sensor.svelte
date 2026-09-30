@@ -24,8 +24,6 @@
             checked={fGPS}
             onChange={() => {
                 tmpOdometer.sensor.gnss = true
-                //mapSettings.set("sensor", tmpOdometer.sensor);
-                //log(mapSettings)
                 // ! Svelte 5: правка поля объекта не считается изменением состояния,
                 // поэтому ссылку переприсваиваем — иначе карточка настроек импульсного
                 // датчика не переключится.
@@ -77,7 +75,7 @@
         validate
         bind:value={tmpOdometer.wheel.w}
         onChange={() =>{
-            if (!tmpOdometer.sensor.gnss) mapSettings.set("wheel", tmpOdometer.wheel)
+            if (!tmpOdometer.sensor.gnss) pending.trip.set("wheel", tmpOdometer.wheel)
             store.dispatch('sendDistance', tmpOdometer)
         }}
         class={`sensor__list-item`}>
@@ -88,7 +86,7 @@
         type="select"
         bind:value={tmpOdometer.wheel.h}
         onChange={() => {
-            if (!tmpOdometer.sensor.gnss) mapSettings.set("wheel", tmpOdometer.wheel)
+            if (!tmpOdometer.sensor.gnss) pending.trip.set("wheel", tmpOdometer.wheel)
             store.dispatch('sendDistance', tmpOdometer)
         }}
         class={`sensor__list-item`}>
@@ -132,7 +130,7 @@
     let gnssPresent = useStore('gnssPresent', (value) => gnssPresent = value);
     let odometer = useStore('odometer', (value) => odometer = value);
     let telemetry = useStore('telemetry', (value) => telemetry = value);
-    let mapSettings = useStore('mapSettings', (value) => mapSettings = value);
+    let pending = useStore('pending', (value) => pending = value);
 
     let interval
     let tmpOdometer = odometer
@@ -163,19 +161,27 @@
         }, 1500);
     }
 
+    /**
+     * ! Выход со страницы сохраняет датчик ВСЕГДА.
+     *
+     * Раньше всё тело стояло под if (!gnssPresent.gps): на плате с модулем ГНСС
+     * выбор «GPS / Импульсный» (sensor.gnss), число импульсов и диаметр колеса
+     * до блока не доходили, интервал замера из clearImp() не снимался (и
+     * продолжал писать в состояние стора), а режим оставался /state/ctrl.
+     * Колесо нужно только импульсному датчику — его и шлём только тогда.
+     */
     function pageAfterOut () {
-        if (!gnssPresent.gps) {
-            log('pageAfterOut', tmpOdometer);
-            clearInterval(interval)
-            //store.dispatch('requestTelemetryStop')
-            store.dispatch('modeWork', store.state.OILER_AUTO)
-            if (tmpOdometer.sensor.imp == 0) tmpOdometer.sensor.imp = 16
+        log('pageAfterOut', tmpOdometer);
+        clearInterval(interval)
+        interval = 0
+        store.dispatch('modeWork', store.state.OILER_AUTO)
+        if (tmpOdometer.sensor.imp == 0) tmpOdometer.sensor.imp = 16
+        pending.trip.set("sensor", tmpOdometer.sensor)
+        if (fIMP) {
             store.dispatch('calcDistance', tmpOdometer)
-            mapSettings.set("sensor", tmpOdometer.sensor)
-            mapSettings.set("wheel", tmpOdometer.wheel)
-            store.dispatch('sendDistance', tmpOdometer)
-            //log(tmpOdometer);
+            pending.trip.set("wheel", tmpOdometer.wheel)
         }
+        store.dispatch('sendDistance', tmpOdometer)
     }
 
 </script>

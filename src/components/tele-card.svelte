@@ -6,6 +6,25 @@
     </CardHeader>
     {#if gauge.length != 0}
     <CardContent padding={true}>
+      <!--
+        ! Градиент дуги приборов — как у шкалы остатка масла (oil-level.svelte):
+        ! слева (0) --f7-theme-color-change-text с прозрачностью 0.35, справа
+        ! (100 %) #5e3e29 без прозрачности. Цвет и прозрачность концов —
+        ! stop-color / stop-opacity у <stop offset="0"> и <stop offset="1">.
+        ! Gauge рисует дугу целиком и прячет
+        ! лишнее stroke-dasharray, поэтому градиент в долях рамки дуги
+        ! (objectBoundingBox) стоит на месте: цвет — по положению на шкале.
+        ! Цвета — через style: CSS-переменные в атрибутах SVG не работают.
+        ! Не display:none — в нём градиент может не найтись по url(#…).
+      -->
+      <svg class="gauge-defs" width="0" height="0" aria-hidden="true">
+        <defs>
+          <linearGradient id="csm-gauge-grad" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" style="stop-color: var(--f7-theme-color-change-text); stop-opacity: 0.80" />
+            <stop offset="1" style="stop-color: #5e3e29; stop-opacity: 1" />
+          </linearGradient>
+        </defs>
+      </svg>
 
       <div class="row-equal">
 <!--         {#each gauge as {value, valueText, labelText, text}}
@@ -32,7 +51,7 @@
                 valueText={valueText}
                 valueFontSize="34"
                 valueTextColor=var(--f7-theme-color-subtitle-text)
-                borderColor=var(--f7-theme-color)
+                borderColor="url(#csm-gauge-grad)"
                 labelText={labelText}
                 labelFontSize = "18"
                 labelTextColor=var(--f7-theme-color-change-text) />

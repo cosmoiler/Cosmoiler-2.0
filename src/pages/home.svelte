@@ -43,8 +43,7 @@
   name="home"
   class={`page`}
   ptr
-  onPtrRefresh={loadMore}
-  onPageTabShow={pageTabShow}>
+  onPtrRefresh={loadMore}>
 
   <!-- Top Navbar -->
   <Navbar title={navbarTitle} />
@@ -110,7 +109,7 @@
   //   поэтому под режимами — доза (ручка «меньше/больше»), ОФФРОУД ×3 и остаток
   //   масла (params[6] телеметрии; у прошивки без него — не показываем).
   $: microIcons = [
-    {name: "icon-dropfill", text: $t('home.setting.dose', {values: {p: (oil.lvl > 0 ? '+' : '') + oil.lvl}})},
+    {name: "icon-drop", text: $t('home.setting.dose', {values: {p: (oil.lvl > 0 ? '+' : '') + oil.lvl}})},
     {name: "icon-off-road", text: "×3"},
     ...((telemetry && telemetry.params && telemetry.params[6])
         ? [{name: "icon-addoil", text: telemetry.params[6].oil + " %"}] : []),
@@ -191,13 +190,6 @@
     $: {
       if (connected) store.dispatch('getMode')
     }
-  function pageTabShow() {
-    if (store.state.fChngSettings.status) {
-      store.state.fChngSettings.status = false
-      store.state.fChngSettings.id = []
-    }
-  }
-
   function loadMore(e, done) {
     document.location.reload()
     setTimeout(() => {

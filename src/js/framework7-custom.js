@@ -15,6 +15,10 @@
  *   - добавлен `gauge` — на нём держатся карточки телеметрии;
  *   - из `framework7/lite` пропал экспорт `request` (в 9-й версии его нет
  *     вовсе — обмен с устройством идёт через src/js/http.js).
+ *
+ * ! Toast — не часть ядра lite: без регистрации f7.toast не существует, и
+ *   f7.toast.show() падал с TypeError после «Заправки» (service/system.svelte)
+ *   и сохранения /route/cfg (route.svelte). Стили — в css/framework7-custom.less.
  */
 import Framework7, { utils, getDevice, createStore } from 'framework7/lite';
 import Accordion from 'framework7/components/accordion';
@@ -30,6 +34,7 @@ import Radio from 'framework7/components/radio';
 import Range from 'framework7/components/range';
 import Skeleton from 'framework7/components/skeleton';
 import Tabs from 'framework7/components/tabs';
+import Toast from 'framework7/components/toast';
 import Toggle from 'framework7/components/toggle';
 import Typography from 'framework7/components/typography';
 
@@ -47,6 +52,7 @@ Framework7.use([
   Range,
   Skeleton,
   Tabs,
+  Toast,
   Toggle,
   Typography,
 ]);

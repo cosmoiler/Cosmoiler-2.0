@@ -143,6 +143,19 @@
   font-weight: normal;
   background-color: var(--theme-bg-color-light);
 }
+/*
+ * ! Строка значков режима (доза, оффроуд, остаток / пресеты) — в .item-text.
+ * Framework7 режет .item-text до двух строк текста (overflow: hidden,
+ * max-height, -webkit-line-clamp), а значки 20px с отступом сверху в эту
+ * высоту не влезают — низ значков обрезался. Здесь это не текст, а ряд
+ * значков, поэтому ограничение снято.
+ */
+.home-list-item .item-text {
+  overflow: visible;
+  max-height: none;
+  -webkit-line-clamp: unset;
+  line-clamp: unset;
+}
 .home-list-item__title{
   font-weight: 500;
 }
@@ -382,19 +395,21 @@
  * ! Индикатор остатка масла (components/oil-level.svelte) — сегменты, как
  * указатель топлива на приборной панели (E — F).
  *
- * Цвет — только цвет темы (#5e3e29, решение пользователя 30.09.2026): горящие
- * сегменты приглушаются по мере опустошения бачка — прозрачность приходит из
- * компонента в --oil-level-alpha (1.0 полный … 0.35 пустой). Погашенные —
- * едва заметная подложка того же цвета. Имена без префикса color- (F7 9, §6).
+ * Цвет горящих сегментов — градиент по их месту на шкале (решение
+ * пользователя 30.09.2026): у «F» — #5e3e29, к «E» — --f7-theme-color-change-text
+ * с затуханием прозрачности до 0.35. Считает компонент (инлайн-стиль сегмента),
+ * здесь — только запасной цвет. Погашенные — едва заметная подложка цвета темы.
+ * Имена без префикса color- (F7 9, §6).
  */
 .oil-level {
   display: flex;
   align-items: center;
   gap: 4px;
-  margin-bottom: 12px;
 }
+/* Подписи E/F — цветом подписей в содержимом карточки режима («Скорость»,
+ * «км/ч» в tele-card.svelte — #888888). */
 .oil-level__label {
-  color: var(--color-subtitle-text);
+  color: #888888;
   font-weight: bolder;
   font-size: 14px;
   line-height: 1;
@@ -408,7 +423,7 @@
   transition: background-color 0.4s;
 }
 .oil-level__seg--on {
-  background-color: rgba(var(--f7-theme-color-rgb), var(--oil-level-alpha, 1));
+  background-color: var(--f7-theme-color);
 }
 // «Мало масла» (low): мигает последний горящий сегмент.
 .oil-level__seg--blink {
@@ -423,6 +438,39 @@
   .oil-level__seg--blink {
     animation: none;
   }
+}
+/*
+ * ! Карточка «Остаток» (telemetry.svelte) — как карточка режима «Одометр»:
+ * бежевые заголовок и подвал (.card-header-tele, .card-footer-tele), белое
+ * содержимое со шкалой. «Мало масла» — красным (--state-bad-color): процент в
+ * заголовке, строка под шкалой и значок в подвале.
+ */
+/* Процент в заголовке — акцентным цветом значений; при «мало масла» его
+ * перекрывает красный (.oil-card__low объявлен ниже). */
+.oil-card__pct {
+  color: var(--f7-theme-color-change-text);
+}
+.oil-card__low {
+  color: var(--state-bad-color);
+}
+.oil-card__low-text {
+  margin: 8px 0 0;
+  font-size: 14px;
+}
+/* В подвале одна строка текста, а не ряд значений: прижата влево и может
+ * переноситься («Оценка пробега появится после 5 км…» на узком экране). */
+.oil-card__footer {
+  justify-content: flex-start;
+}
+.oil-card__item {
+  align-items: center;
+}
+/* Текст оценки пробега — прежний, как был в содержимом карточки: обычный
+ * чёрный текст страницы. Подвал F7 иначе красит его в rgba(0,0,0,.45). */
+.oil-card__km {
+  margin-left: 12px;
+  color: var(--f7-text-color);
+  font-weight: 400;
 }
 
 .settings-main__list-item,
@@ -604,6 +652,7 @@
  * по умолчанию в карточке остаются только заголовок и тумблер, а текст
  * раскрывается по тапу: страница стала вдвое короче (замер при 360px:
  * 1507px -> 738px). Класс тот же, что у секций страницы System.
+ * Строка стоит в подвале карточки — см. .section-card__footer ниже.
  */
 .section-more {
   display: flex;
@@ -615,9 +664,10 @@
   padding: 12px 16px;
   border: 0;
   background-color: transparent;
-  color: var(--f7-theme-color-change-text);
+  //color: var(--f7-theme-color-change-text);
+  color: var(--color-subtitle-text);
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 500;
   text-align: left;
   cursor: pointer;
 }
@@ -629,6 +679,40 @@
 }
 .section-more.is-open .section-more__chev {
   transform: rotate(180deg);
+}
+
+/*
+ * ! Подвал карточки с инструкцией (components/section-instr.svelte).
+ *
+ * Единый вид карточек с инструкцией (30.09.2026), образец — карточка «Макс.
+ * скорость» на странице «Масло»: заголовок и настройки (строки .row-tint,
+ * кнопка действия) — на бежевом, инструкция — внизу на белом. Подвал своего
+ * фона не имеет: это белое тело карточки. Текст — как подписи строк карточки
+ * («Бачок был почти пуст», .list-input__label + _text_color): 14px,
+ * --color-subtitle-text, без курсива.
+ */
+.section-card__instr {
+  padding: 0 16px 12px;
+  font-size: 14px;
+ // color: var(--color-subtitle-text);
+
+  p {
+    margin: 0 0 8px;
+  }
+  p:last-child {
+    margin-bottom: 0;
+  }
+}
+/* Пояснение без сворачивания (под «Макс. скоростью»): сверху нет строки
+ * «Инструкция», поэтому отступ сверху — свой. */
+.section-card__note {
+  padding-top: 12px;
+}
+/* Кнопка действия («Бачок заправлен») — часть бежевой части с настройками. */
+.section-card > .block.section-card__action {
+  padding-top: 12px;
+  padding-bottom: 12px;
+  background-color: var(--theme-bg-color-light);
 }
 /*   .settings-main__icon_margin-top {
   margin-bottom: calc(var(--icon-size)/3);
@@ -648,7 +732,10 @@
   font-size: 14px;
 }
 .list-input__label-text_color {
-  color: var(--color-subtitle-text);
+  //color: var(--color-subtitle-text);
+  color: var(--f7-theme-color-change-text);
+  font-size: 16px;
+  font-weight: 600;
 }
 
 .block-header_text {
@@ -904,3 +991,11 @@
 
 
 } */
+
+/* Определения градиента дуги приборов (tele-card.svelte): не занимают места. */
+.gauge-defs {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}

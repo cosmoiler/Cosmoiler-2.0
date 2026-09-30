@@ -32,8 +32,6 @@
               onChange={() => {
                 tmpPump.usr = false
                 store.dispatch('sendPump', tmpPump);
-                //mapSettings.set("sensor", tmpOdometer.sensor);
-                //log(mapSettings)
               }}
               class={`sensor__list-item`}>
             </ListItem>
@@ -46,8 +44,6 @@
               onChange={() => {
                 tmpPump.usr = true
                 store.dispatch('sendPump', tmpPump);
-                //mapSettings.set("sensor", tmpOdometer.sensor);
-                //log(mapSettings)
               }}
               class={`sensor__list-item`}>
             </ListItem>

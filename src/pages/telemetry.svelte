@@ -20,24 +20,30 @@
          Перенесён со страницы «Масло» в настройках (решение пользователя 28.09.2026):
          это показание, а не настройка. У прошивки без учёта масла params[6] нет —
          карточки нет. -->
+    <!-- ! Устроена как карточка режима (tele-card.svelte, «Одометр»): бежевые
+         заголовок и подвал, белое содержимое. Заголовок — «ОСТАТОК» и процент,
+         содержимое — шкала (и «мало масла»), подвал — оценка пробега. Красный
+         при «мало масла» — классом (--state-bad-color), а не инлайн-стилем. -->
     {#if oilTele}
     <Card class='elevation-3'>
       <CardHeader class={`card-header-tele`}>
         <span>{$t('settings.oil.remains').toUpperCase()}</span>
-        <span style={oilTele.low == 1 ? 'color: red' : ''}>{oilTele.oil} %</span>
+        <span class="oil-card__pct" class:oil-card__low={oilTele.low == 1}>{oilTele.oil} %</span>
       </CardHeader>
       <CardContent padding={true}>
         <OilLevel oil={oilTele.oil} low={oilTele.low} />
-        <div class="display-flex align-items-center">
-          <Icon icon="icon-addoil" style={oilTele.low == 1 ? 'font-size: 30px; color: red' : 'font-size: 30px'} />
-          <span style="margin-left: 12px">
+        {#if oilTele.low == 1}
+          <p class="oil-card__low oil-card__low-text">{$t('settings.oil.low')}</p>
+        {/if}
+      </CardContent>
+      <CardFooter class="card-footer-tele oil-card__footer">
+        <div class="card-footer-tele__icon-text oil-card__item">
+          <Icon icon="icon-addoil" class={`card-footer-tele__icon${oilTele.low == 1 ? ' card-footer-tele__icon--bad' : ''}`} />
+          <span class="oil-card__km">
             {oilTele.km >= 0 ? $t('settings.oil.km', {values: {p: oilTele.km}}) : $t('settings.oil.km.unknown')}
           </span>
         </div>
-        {#if oilTele.low == 1}
-          <p style="color: red; margin-bottom: 0">{$t('settings.oil.low')}</p>
-        {/if}
-      </CardContent>
+      </CardFooter>
     </Card>
     {/if}
   </div>
@@ -54,6 +60,7 @@
     Card,
     CardHeader,
     CardContent,
+    CardFooter,
     Icon,
     useStore
   } from 'framework7-svelte';
@@ -217,7 +224,7 @@ $:  dataCardTele = [
       ],
       icons: [
         { // 1-я иконка
-          icon: iconsPreset[indexPreset(telemetry)],
+          icon: oil.micro ? "icon-drop" : iconsPreset[indexPreset(telemetry)],
           value: presetValueOdo(telemetry)
         },
         { // 2-я иконка
@@ -245,7 +252,7 @@ $:  dataCardTele = [
           units: "" }
       ],
       icons: [
-        {icon: iconsPreset[indexPreset(telemetry)], value: presetValueTmr(telemetry)},
+        {icon: oil.micro ? "icon-drop" : iconsPreset[indexPreset(telemetry)], value: presetValueTmr(telemetry)},
         {icon: "icon-pump", value: telemetry.params[nameParams.PUMP].v},
         {
           icon: "icon-accum",
@@ -303,7 +310,7 @@ $:  dataCardTele = [
           units: "" }
       ],
       icons: [
-        {icon: iconsPreset[indexPreset(telemetry)], value: presetValueTmr(telemetry)},
+        {icon: oil.micro ? "icon-drop" : iconsPreset[indexPreset(telemetry)], value: presetValueTmr(telemetry)},
         {icon: "icon-pump", value: telemetry.params[nameParams.PUMP].v},
         (gnssPresent.gps) ? gpsIcon(telemetry) : null,
         {

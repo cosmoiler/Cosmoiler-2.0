@@ -1,8 +1,13 @@
 
 import { createStore } from 'framework7/lite';
 import { f7 } from 'framework7-svelte';
+import { get } from 'svelte/store';
+import { t } from '../services/i18n.js';
 import { request } from './http.js';
 import log from './debug.js'
+
+/** Перевод строки вне компонента (svelte-i18n отдаёт t как store). */
+const tr = (key) => get(t)(key);
 
 function getUrlVar() {
    // debug("document.location.host")
@@ -117,6 +122,21 @@ const FORCE_CONNECTED = import.meta.env.DEV;
  * интерфейсе (в прошивке) умолчание прежнее — false.
  */
 const DEV_OIL_MICRO = import.meta.env.DEV && getUrlVar()['micro'] !== '0';
+
+/**
+ * ! ОТЛАДКА: без устройства «Телеметрия» показывает карточку «Одометр».
+ *
+ * Зачем: карточку выбирает режим из телеметрии (params[3].m), а без устройства
+ * /telemetry/get не отвечает и оставалось умолчание m = 0 — карточка OFF.
+ * При `npm run dev` умолчания — режим 1 (одометр) и фикс GPS: без фикса
+ * одометр по ГНСС показывается карточкой «Таймер без спутников»
+ * (indexDataCardTele в telemetry.svelte). Скорость, остаток до порции,
+ * одометр, спутники, напряжение, остаток масла 60 % — правдоподобные числа,
+ * чтобы видеть карточки заполненными. Ответ устройства, если оно доступно, их заменит.
+ *
+ * Привязка к `import.meta.env.DEV`: в собранном интерфейсе умолчания прежние.
+ */
+const DEV_TELEMETRY = import.meta.env.DEV;
 
 /**
  * ! ОТЛАДКА: подавление окон «Команда не выполнена!».
@@ -337,6 +357,70 @@ export function deviceUrl(path) {
   return 'http://' + uri() + path;
 }
 
+/**
+ * Версия прошивки: ver из /settings/ver (или из localStorage, если блок не
+ * ответил). verfs — цифры двух последних символов ver.fw через точку.
+ * Раньше разбор был повторён трижды и падал, когда в localStorage ничего нет
+ * (JSON.parse(null) → null.fw) или в хвосте fw нет цифр (null.join).
+ */
+function applyVer(state, ver) {
+  if (!ver || typeof ver.fw !== 'string') return;
+  state.ver = ver;
+  const digits = ver.fw.slice(-2).match(/\d/g);
+  if (digits) state.verfs = digits.join('.');
+}
+
+function requestVer(state) {
+  return deviceRequest('/settings/ver')
+    .then((response) => {
+      applyVer(state, JSON.parse(response.data));
+      localStorage.setItem('ver', response.data);
+    })
+    .catch(() => {
+      try { applyVer(state, JSON.parse(localStorage.getItem('ver'))); } catch (err) { /* нет сохранённой */ }
+    });
+}
+
+/**
+ * Таймер с блока: у прошивки два пресета (город, оффроуд), интерфейс держит три
+ * — индекс 1 (трасса) пустышка, чтобы индексы совпадали с одометром
+ * (presets.CITY/WAY/OFFROAD). Раньше пустышку вставляла только стартовая
+ * загрузка, а перечитывание после отказа записи — нет: оффроуд (индекс 2)
+ * становился undefined.
+ */
+function applyTimer(state, timer) {
+  timer.presets.splice(1, 0, { time: 0, num: 0, cycles: 0 });
+  state.timer = timer;
+}
+
+/**
+ * Отправить очередь раздела (state.pending[section]) и очистить её. При отказе —
+ * окно ошибки и чтение раздела с блока, чтобы страница показала то, что в нём
+ * действительно лежит (apply — как применить ответ GET к state).
+ */
+function sendPending(state, section, path, apply) {
+  const queue = state.pending[section];
+  if (queue.size === 0) return;
+  const data = Object.fromEntries(queue);
+  queue.clear();
+  log('send %s: %o', path, data);
+  deviceRequest(path, { method: 'POST', data })
+    .catch(() => {
+      commandFailed(tr('error.command'));
+      deviceRequest(path)
+        .then((response) => apply(JSON.parse(response.data)))
+        .catch(() => { /* связь отслеживает сторож */ });
+    });
+}
+
+/** Адреса команд смены режима смазчика (modeWork). */
+const MODE_PATHS = {
+  0: '/state/auto',     // OILER_AUTO
+  2: '/state/ctrl',     // OILER_VISCOSITY
+  3: '/state/pumping',  // OILER_PUMPING
+  4: '/state/training', // OILER_TRAINING
+};
+
 /** Ответ прошивки на запись настроек: {"status":true|false} (при отказе ещё и HTTP 500). */
 function statusOk(response) {
   try {
@@ -353,21 +437,20 @@ const store = createStore({
    // trigg_connect: false; // триггер изменения статуса подключения
     locale: (navigator.userLanguage || navigator.language || navigator.systemLanguage),
     /**
-     * ! Флаг изменения настроек
-     * status {false, true}: true - настройки были изменены, false - не было измененений
-     * id:
-     * settings: имя ключа в объекте (массив объектов: ключ:значение)
+     * ! Изменённые, но ещё не отправленные поля настроек — по разделам.
      *
+     * Страница кладёт поле в очередь своего раздела (pending.trip.set('presets', …)),
+     * send* отправляет только эту очередь и очищает её. Раньше очередь была одна
+     * на всех (mapSettings): поездка и таймер писали туда один ключ presets, а
+     * sendSystem отправлял и очищал её сразу — правки поездки, ждущие отложенной
+     * отправки (2 с), уходили на /settings/system и терялись.
      */
-    fChngSettings: {status: false, id: []},
-    /**
-     * ! Данные настроек */
-    mapSettings: new Map(),
+    pending: { trip: new Map(), time: new Map(), system: new Map() },
 
     //gnssPresent: false,
     mode: {
       id: "/mode.json",
-      m: 0,
+      m: DEV_TELEMETRY ? 1 : 0, // dev без блока — одометр (см. DEV_TELEMETRY)
       p: 0
     },
     odometer: {
@@ -445,11 +528,11 @@ const store = createStore({
         { // 0 - odometer
           sp: 0,
           imp: 0,
-          v: 0,     // Одометр
-          dst: 0,   // Оставшееся расстояние до вкл насоса [м]
-          spd: 0,   // Скорость
-          maxsp: 0, // Максимальная скорость
-          avgsp: 0  // Средняя скорость
+          v: DEV_TELEMETRY ? 12345 : 0,   // Одометр [м]
+          dst: DEV_TELEMETRY ? 2000 : 0,  // Оставшееся расстояние до вкл насоса [м]
+          spd: DEV_TELEMETRY ? 120 : 0,    // Скорость
+          maxsp: DEV_TELEMETRY ? 98 : 0,  // Максимальная скорость
+          avgsp: DEV_TELEMETRY ? 54 : 0   // Средняя скорость
         },
         { // 1 - timer
           v: 110000,  // Таймер, [мс]
@@ -458,13 +541,13 @@ const store = createStore({
         { // 2 - pump
           v: 0,      // Количество включений насоса
         },
-        { // 3 - mode
-          m: 0, p: 0
+        { // 3 - mode (dev без блока — одометр, см. DEV_TELEMETRY)
+          m: DEV_TELEMETRY ? 1 : 0, p: 0
         },
         { // 4 - gps
-          fix: false,   // 3D Fix GPS
+          fix: DEV_TELEMETRY,          // 3D Fix GPS
           fake: false,  // Признак спуффинга GPS сигнала
-          sat: 0,       // Количество спутников
+          sat: DEV_TELEMETRY ? 9 : 0,  // Количество спутников
           lat: 0.000000,// Широта
           lon: 0.000000,// Долгота
           q: 0          // Вердикт достоверности ГНСС: 0 — достоверно, 1 — сомнительно,
@@ -472,15 +555,15 @@ const store = createStore({
                         // тогда цвет значка GPS решает один fix, см. telemetry.svelte)
         },
         { // 5 - voltage
-          v: 0,       // Напряжение бортовое [мс]
+          v: DEV_TELEMETRY ? 13800 : 0, // Напряжение бортовое [мВ]
           r: 4095,    // Разрешение АЦП
           max: 3.3,    // Максимальное напряжение на входе АЦП [В]
           R1: 200000,
           R2: 49900
         },
         { // 6 - oil (прошивка с 27.09.2026, docs/oil.md)
-          oil: 100,   // Остаток масла в бачке, %
-          km: -1,     // Хватит на ~N км (-1 — оценки ещё нет)
+          oil: DEV_TELEMETRY ? 100 : 100, // Остаток масла в бачке, %
+          km: DEV_TELEMETRY ? 2500 : -1,     // Хватит на ~N км (-1 — оценки ещё нет)
           low: 0      // 1 — мало масла
         },
       ]
@@ -513,8 +596,7 @@ const store = createStore({
     system:       ({state}) => state.system,
     ver:          ({state}) => state.ver,
     verfs:        ({state}) => state.verfs,
-    chngSettings: ({state}) => state.fChngSettings,
-    mapSettings:  ({state}) => state.mapSettings,
+    pending:      ({state}) => state.pending,
   },
   actions: {
     init({state}) {
@@ -548,10 +630,7 @@ const store = createStore({
         if (online) {
           deviceRequest('/settings/mode').then((response) => { state.mode = JSON.parse(response.data) });
           deviceRequest('/settings/trip').then((response) => { state.odometer = JSON.parse(response.data) });
-          deviceRequest('/settings/time').then((response) => {
-            state.timer = JSON.parse(response.data)
-            state.timer.presets.splice(1, 0, { time: 0, num: 0, cycles: 0 })
-          });
+          deviceRequest('/settings/time').then((response) => applyTimer(state, JSON.parse(response.data)));
           deviceRequest('/settings/manual').then((response) => { state.manual = JSON.parse(response.data) });
           deviceRequest('/settings/pump').then((response) => { state.pump = JSON.parse(response.data) });
           // Прошивка до 27.09.2026 секции масла не знает — остаются умолчания.
@@ -563,22 +642,7 @@ const store = createStore({
             if (ToBoolean(state.system.gps) == false)
               state.odometer.sensor.gnss = false
           });
-          deviceRequest('/settings/ver')
-            .then((response) => {
-              state.ver = JSON.parse(response.data)
-              localStorage.setItem('ver', response.data)
-              // парсинг версии
-              let fs = state.ver.fw.slice(-2);
-              state.verfs = fs.match(/\d{1}/g).join('.');
-            })
-            .catch((err) => {
-              state.ver = JSON.parse(localStorage.getItem('ver'))
-              // парсинг версии
-              if (state.ver) {
-                let fs = state.ver.fw.slice(-2);
-                state.verfs = fs.match(/\d{1}/g).join('.');
-              }
-            });
+          requestVer(state);
           deviceRequest('/telemetry/get')
             .then((response)=> {
               state.telemetry = JSON.parse(response.data)
@@ -619,20 +683,7 @@ const store = createStore({
             state.system = JSON.parse(response.data)
             if (!state.system.gps) state.odometer.sensor.gnss = false
           });
-          deviceRequest('/settings/ver')
-            .then((response) => {
-              state.ver = JSON.parse(response.data)
-              localStorage.setItem('ver', response.data)
-              // парсинг версии
-              let fs = state.ver.fw.slice(-2);
-              state.verfs = fs.match(/\d{1}/g).join('.');
-            })
-            .catch((err) => {
-              state.ver = JSON.parse(localStorage.getItem('ver'))
-              // парсинг версии
-              let fs = state.ver.fw.slice(-2);
-              state.verfs = fs.match(/\d{1}/g).join('.');
-            });
+          requestVer(state);
         }
       //}
     },
@@ -707,26 +758,12 @@ const store = createStore({
       state.odometer = state.odometer
     },
 
+    /** Одометр: поля из state.pending.trip, отправка через 2 с после последней правки. */
     sendDistance({state}, data) {
       state.odometer = data
       state.odometer = state.odometer
-      deferSend('trip', () => {
-        deviceRequest('/settings/trip', { method: 'POST', data: Object.fromEntries(state.mapSettings) })
-        .then((res) => {
-          log(res)
-        })
-        .catch((err) => {
-          commandFailed("Команда не выполнена!")
-          deviceRequest('/settings/trip')
-            .then((response) => { state.odometer = JSON.parse(response.data) })
-        })
-        state.mapSettings.clear();
-        log("ws send: ", {cmd: "post", param: [state.odometer.id, Object.fromEntries(state.mapSettings)]})
-                                                          // Данная запись прдотвращает попадание в массив повторяющихся значений id
-        state.fChngSettings = { status: true, id: [...new Set([...state.fChngSettings.id, state.odometer.id])]};
-        log("send Dist = ", state.odometer)
-      })
-
+      deferSend('trip', () => sendPending(state, 'trip', '/settings/trip',
+        (odometer) => { state.odometer = odometer }))
     },
 
     /**
@@ -763,24 +800,12 @@ const store = createStore({
       return statusOk(res);
     },
 
+    /** Таймер: поля из state.pending.time, отправка через 2 с после последней правки. */
     sendTime({state}, data) {
       state.timer = data
       state.timer = state.timer
-      deferSend('time', () => {
-        deviceRequest('/settings/time', { method: 'POST', data: Object.fromEntries(state.mapSettings) })
-        .then((res) => {
-          log(res)
-        })
-        .catch((err) => {
-          commandFailed("Команда не выполнена!")
-          // ! Было state.odometer: данные таймера затирали одометр.
-          deviceRequest('/settings/time')
-            .then((response) => { state.timer = JSON.parse(response.data) })
-        })
-        state.mapSettings.clear()
-        state.fChngSettings = { status: true, id: [...new Set([...state.fChngSettings.id, state.timer.id])]}
-        log("send Time = ", state.timer)
-      })
+      deferSend('time', () => sendPending(state, 'time', '/settings/time',
+        (timer) => applyTimer(state, timer)))
     },
 
     sendManual({state}, data) {
@@ -795,14 +820,14 @@ const store = createStore({
           .then((res) => {
             log(res)
           })
-          .catch((err) => {
-            commandFailed("Команда не выполнена!")
+          .catch(() => {
+            commandFailed(tr('error.command'))
             // ! Было state.odometer: данные manual затирали одометр.
             deviceRequest('/settings/manual')
               .then((response) => { state.manual = JSON.parse(response.data) })
+              .catch(() => { /* связь отслеживает сторож */ })
           })
-          state.fChngSettings = { status: true, id: [...new Set([...state.fChngSettings.id, state.manual.id])]};
-          log("send Pump = ", state.manual);
+          log("send Manual = ", state.manual);
       }, 300)
     },
 
@@ -817,13 +842,13 @@ const store = createStore({
           .then((res) => {
             log(res)
           })
-          .catch((err) => {
-            commandFailed("Команда не выполнена!")
+          .catch(() => {
+            commandFailed(tr('error.command'))
             // ! Было state.odometer: данные насоса затирали одометр.
             deviceRequest('/settings/pump')
               .then((response) => { state.pump = JSON.parse(response.data) })
+              .catch(() => { /* связь отслеживает сторож */ })
           })
-          state.fChngSettings = { status: true, id: [...new Set([...state.fChngSettings.id, state.pump.id])]};
           log("send Pump = ", state.pump);
       });
 
@@ -840,10 +865,11 @@ const store = createStore({
       deferSend('oil', () => {
         deviceRequest('/settings/oil', { method: 'POST', data: { lvl: state.oil.lvl } })
           .then((res) => { log(res) })
-          .catch((err) => {
-            commandFailed("Команда не выполнена!")
+          .catch(() => {
+            commandFailed(tr('error.command'))
             deviceRequest('/settings/oil')
               .then((response) => { state.oil = { ...JSON.parse(response.data), supported: true } })
+              .catch(() => { /* связь отслеживает сторож */ })
           })
         log("send Oil = ", state.oil)
       }, 300)
@@ -880,53 +906,35 @@ const store = createStore({
           .then((res) => {
             log(res)
           })
-          .catch((err) => {
-            commandFailed("Команда не выполнена!")
+          .catch(() => {
+            commandFailed(tr('error.command'))
             deviceRequest('/settings/mode')
               .then((response) => { state.mode = JSON.parse(response.data) })
-              .catch((err) => { /* state.connect = false */ })
+              .catch(() => { /* связь отслеживает сторож */ })
           })
     },
 
+    /** Система: поля из state.pending.system, отправка сразу (при уходе со страницы). */
     sendSystem({state}, data) {
       state.system = data
       state.system = state.system
-      deviceRequest('/settings/system', { method: 'POST', data: Object.fromEntries(state.mapSettings) })
-      .then((res) => {
-        log(res)
-      })
-      .catch((err) => {
-        commandFailed("Команда не выполнена!")
-        // ! Было state.odometer: данные system затирали одометр.
-        deviceRequest('/settings/system')
-          .then((response) => { state.system = JSON.parse(response.data) })
-      })
-      state.mapSettings.clear()
-      state.fChngSettings = { status: true, id: [...new Set([...state.fChngSettings.id, state.system.id])]}
-      log("send System = ", state.system)
+      sendPending(state, 'system', '/settings/system',
+        (system) => { state.system = system })
     },
 
     modeWork({state}, mode) {
-      let rest_str;
-      if (mode == store.state.OILER_AUTO) {
-        rest_str = '/state/auto'
-      }
-      if (mode == store.state.OILER_VISCOSITY) {
-        rest_str = '/state/ctrl'
-      }
-      if (mode == store.state.OILER_PUMPING) {
-        rest_str = '/state/pumping'
-      }
-      if (mode == store.state.OILER_TRAINING) {
-        rest_str = '/state/training'
+      const path = MODE_PATHS[mode];
+      if (!path) {
+        log('modeWork: неизвестный режим %o', mode);
+        return Promise.resolve();
       }
       // Promise возвращается: store.dispatch отдаёт его вызывающему, и тот может
       // дождаться ответа (system.svelte шлёт команду насоса только после
       // /state/pumping — прошивка выполняет её лишь в режиме прокачки).
-      return deviceRequest(rest_str)
+      return deviceRequest(path)
       .catch(() => {
         // f7.alert не существует: было TypeError вместо сообщения пользователю.
-        commandFailed('Нет связи с блоком управеления. Команда не выполнена')
+        commandFailed(tr('error.nolink'))
       })
     },
 
@@ -935,22 +943,22 @@ const store = createStore({
       .then((res) => {
         log(res)
       })
-      .catch((err) => {
-        commandFailed("Команда не выполнена!")
+      .catch(() => {
+        commandFailed(tr('error.command'))
       })
     },
 
     ctrlBright({state}, data) {
       deviceRequest('/settings/bright?v='+ data, { method: 'POST' })
         .catch(() => {
-          commandFailed('Нет связи с блоком управеления. Команда не выполнена.')
+          commandFailed(tr('error.nolink'))
         })
     },
 
     fakeGPS({state}, data) {
       deviceRequest('/settings/fakegps?state='+(data>>0), { method: 'POST' })
       .catch(() => {
-        commandFailed('Нет связи с блоком управеления. Команда не выполнена.')
+        commandFailed(tr('error.nolink'))
       })
     }
   },

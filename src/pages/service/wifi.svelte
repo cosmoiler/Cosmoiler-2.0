@@ -77,18 +77,15 @@
     } from 'framework7-svelte';
     import {t} from '../../services/i18n.js';
     import store from '../../js/store.js';
-    import log from '../../js/debug.js'
 
     let connected = useStore('connected', (value) => connected = value);
     let system = useStore('system', (value) => system = value);
-    let mapSettings = useStore('mapSettings', (value) => mapSettings = value);
+    let pending = useStore('pending', (value) => pending = value);
 
     $: if (!connected) document.location.reload()
 
     function pageAfteOut() {
-      mapSettings.set("ap", system.ap)
-     // mapSettings.set("sta", system.sta)
-      log(mapSettings)
+      pending.system.set("ap", system.ap)
       store.dispatch('sendSystem', system)
     }
   </script>

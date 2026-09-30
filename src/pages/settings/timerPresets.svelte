@@ -6,7 +6,7 @@
 
   <Toolbar top tabbar >
     <Link tabLink="#tab-city-time" tabLinkActive>{$t('settings.presets.city')}</Link>
-    <Link tabLink="#tab-rain">{$t('settings.presets.user')}</Link>
+    <Link tabLink="#tab-rain-time">{$t('settings.presets.user')}</Link>
   </Toolbar>
   <Tabs >
 
@@ -25,7 +25,9 @@
     </Tab>
 
 <!-- ДОЖДЬ ПЕСОК -->
-    <Tab id="tab-rain">
+    <!-- id отличается от #tab-rain пресетов одометра: одинаковые id вкладок в
+         одном документе — источник путаницы при переключении. -->
+    <Tab id="tab-rain-time">
       {#each rangeValues[1] as rangeValue}
         <div class="section-card">
           <Ranges {...rangeValue}/>
@@ -47,115 +49,55 @@
   import {t} from '../../services/i18n.js';
   import Ranges from '../../components/range-param.svelte'
   import store from '../../js/store.js';
-  import log from '../../js/debug.js'
-
   let connected = useStore('connected', (value) => connected = value);
   let timer = useStore('timer', (value) => timer = value);
-  let mapSettings = useStore('mapSettings', (value) => mapSettings = value);
+  let pending = useStore('pending', (value) => pending = value);
 
   let tmpTimer = timer;
 
-/*   const presets = {
-    CITY: 0,
-    OFFROAD: 2,
-  } */
-
   $: if (!connected) document.location.reload()
+
+  const P = store.state.presets
+
+  /**
+   * Шкала поля field пресета index. Правка кладёт в очередь таймера
+   * (pending.time) ОБА пресета прошивки — город и оффроуд (индекс 1 в
+   * интерфейсе — пустышка, см. applyTimer в store.js). Раньше второй элемент
+   * брался как arr[OFFROAD] из прошлого двухэлементного массива — всегда
+   * undefined, и правка оффроуда терялась, если за 2 с изменить город.
+   * tmr — тот же tmpTimer: передаётся, чтобы $: rangeValues зависел от него.
+   */
+  const presetRange = (tmr, index, field, opts) => ({
+    ...opts,
+    value: tmr.presets[index][field],
+    rangeChange: (e) => {
+      tmpTimer.presets[index][field] = e
+      pending.time.set('presets', [tmpTimer.presets[P.CITY], tmpTimer.presets[P.OFFROAD]])
+      store.dispatch('sendTime', tmpTimer)
+    }
+  })
+
+  // Время — в секундах; подпись без ведущего пробела локали (« сек»).
+  $: timeOpts = {
+    title: $t('all.timer'), name_value: $t('all.seconds').trim(), icon: "icon-clock",
+    minValue: 10, maxValue: 600, stepValue: 10, scaleSubSteps: 2, frmtScaleLabel: outScaleLabel
+  }
+  $: countOpts = {
+    title: $t('all.count'), icon: "icon-drop",
+    minValue: 1, maxValue: 5, stepValue: 1, scaleStep: 4, scaleSubSteps: 1
+  }
 
   $: rangeValues = [
     /* ГОРОД */
-    [{
-      title: "Таймер",
-      value: tmpTimer.presets[store.state.presets.CITY].time,
-      name_value: "сек",
-      minValue: 10,
-      maxValue: 600,
-      stepValue: 10,
-      scaleStep: 4,
-      sacaleSubSteps: 2,
-      icon: "icon-clock",
-      frmtScaleLabel: outScaleLabel,
-      rangeChange: (e)=>{
-        tmpTimer.presets[store.state.presets.CITY].time = e
-        let arr = mapSettings.get('presets')
-        mapSettings.set("presets", [tmpTimer.presets[store.state.presets.CITY], (arr)?arr[store.state.presets.OFFROAD]:null]);
-        store.dispatch('sendTime', tmpTimer)
-        log(mapSettings)
-      }
-    },
-    {
-      title: $t('all.count'),
-      value: tmpTimer.presets[store.state.presets.CITY].num,
-      minValue: 1,
-      maxValue: 5,
-      stepValue: 1,
-      scaleStep: 4,
-      scaleSubSteps: 1,
-      icon: "icon-drop",
-      rangeChange: (e)=>{
-        tmpTimer.presets[store.state.presets.CITY].num = e
-        let arr = mapSettings.get('presets')
-        mapSettings.set("presets", [tmpTimer.presets[store.state.presets.CITY], (arr)?arr[store.state.presets.OFFROAD]:null]);
-        store.dispatch('sendTime', tmpTimer)
-        log(mapSettings)
-      }
-    }],
+    [presetRange(tmpTimer, P.CITY, 'time', { ...timeOpts, scaleStep: 4 }),
+     presetRange(tmpTimer, P.CITY, 'num', countOpts)],
     /* ОФФРОАД */
-    [{
-      title: "Таймер",
-      value: tmpTimer.presets[store.state.presets.OFFROAD].time,
-      name_value: "сек",
-      minValue: 10,
-      maxValue: 600,
-      stepValue: 10,
-      scaleStep: 3,
-      sacaleSubSteps: 2,
-      icon: "icon-clock",
-      frmtScaleLabel: outScaleLabel,
-      rangeChange: (e)=>{
-        tmpTimer.presets[store.state.presets.OFFROAD].time = e
-        let arr = mapSettings.get('presets')
-        mapSettings.set("presets", [(arr)?arr[store.state.presets.CITY]:null, tmpTimer.presets[store.state.presets.OFFROAD]]);
-        store.dispatch('sendTime', tmpTimer);
-      log(mapSettings)
-      }
-    },
-    {
-      title: $t('all.count'),
-      value: tmpTimer.presets[store.state.presets.OFFROAD].num,
-      minValue: 1,
-      maxValue: 5,
-      stepValue: 1,
-      scaleStep: 4,
-      scaleSubSteps: 1,
-      icon: "icon-drop",
-      rangeChange: (e)=>{
-        tmpTimer.presets[store.state.presets.OFFROAD].num = e
-        let arr = mapSettings.get('presets')
-        mapSettings.set("presets", [(arr)?arr[store.state.presets.CITY]:null, tmpTimer.presets[store.state.presets.OFFROAD]]);
-        store.dispatch('sendTime', tmpTimer);
-      log(mapSettings)
-      }
-    },
-    {
-      title: "Количество циклов",
-      value: tmpTimer.presets[store.state.presets.OFFROAD].cycles,
-      minValue: 0,
-      maxValue: 10,
-      stepValue: 1,
-      scaleStep: 5,
-      scaleSubSteps: 2,
-      icon: "icon-repeat",
-      rangeChange: (e)=>{
-        tmpTimer.presets[store.state.presets.OFFROAD].cycles = e
-        let arr = mapSettings.get('presets')
-        mapSettings.set("presets", [(arr)?arr[store.state.presets.CITY]:null, tmpTimer.presets[store.state.presets.OFFROAD]]);
-        store.dispatch('sendTime', tmpTimer);
-      log(mapSettings)
-      }
-    }]
+    [presetRange(tmpTimer, P.OFFROAD, 'time', { ...timeOpts, scaleStep: 3 }),
+     presetRange(tmpTimer, P.OFFROAD, 'num', countOpts),
+     presetRange(tmpTimer, P.OFFROAD, 'cycles', {
+      title: $t('all.count.cycles'), icon: "icon-repeat",
+      minValue: 0, maxValue: 10, stepValue: 1, scaleStep: 5, scaleSubSteps: 2 })]
   ]
-
 
   function outScaleLabel(e) {
     return Math.round(e/10) * 10

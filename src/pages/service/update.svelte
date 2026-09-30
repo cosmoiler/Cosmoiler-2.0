@@ -17,10 +17,10 @@
           bind:this={browseInput}
           class={`hidden`}
           />
-        <Button outline lager onClick={selectFile}>{nameFile}</Button>
+        <Button outline large onClick={selectFile}>{nameFile}</Button>
       </div>
       <div>
-        <Button disabled={!files | !f_connected} fill onClick={update} class={`margin-top__20px`}>{$t('button.update')}</Button>
+        <Button disabled={!files || !f_connected} fill onClick={update} class={`margin-top__20px`}>{$t('button.update')}</Button>
       </div>
   </Block>
 
@@ -47,6 +47,7 @@
     import {t} from '../../services/i18n.js';
     import { f7 } from 'framework7-svelte';
     import { request } from '../../js/http.js';
+    import { deviceUrl } from '../../js/store.js';
     import log from '../../js/debug.js';
 
     let connected = useStore('connected', (value) => connected = value);
@@ -142,7 +143,9 @@
           f7.dialog.alert($t('service.update.fw.error'), "Cosmoiler")
         }
       };
-      xhr.open("POST", "http://192.168.4.1/update", true);
+      // Адрес блока — как у остальных запросов (deviceUrl): раньше здесь стоял
+      // http://192.168.4.1, и обновление не работало при другом адресе (?ws=, STA).
+      xhr.open("POST", deviceUrl('/update'), true);
       xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
       xhr.send(files[0]);
     }
@@ -153,13 +156,15 @@
         () => {
           //store.dispatch('cmdReset')
           f7.preloader.show();
-          request('http://192.168.4.1/reset/cnfg')
+          request(deviceUrl('/reset/cnfg'))
           .then((res) => {
               f7.preloader.hide()
-              log('192.168.4.1/status', res.data)
+              log('/reset/cnfg', res.data)
           })
           .catch((err) => {
             log(err)
+            // Без hide() индикатор ожидания оставался поверх страницы навсегда.
+            f7.preloader.hide()
             f7.dialog.alert($t('service.update.cnfg.confirm.error'), "Cosmoiler")
           })
         })

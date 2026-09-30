@@ -19,6 +19,9 @@
       ! карточке. Длинные тексты свёрнуты — в карточке остаётся строка
       ! «Инструкция», текст раскрывается по тапу. Страница стала вдвое короче:
       ! 1507px -> 738px при ширине 360px.
+      !
+      ! Инструкция — всегда в подвале карточки (components/section-instr.svelte):
+      ! шапка, белое тело с настройками, бежевый подвал.
     -->
     <!-- Управление прокачкой системы -->
         <div class="section-card">
@@ -46,14 +49,15 @@
                     <div class="item-cell width-auto flex-shrink-4"><Toggle bind:checked={wasEmpty} /></div>
                 </ListItem>
             </List>
-            <Block>
+            <!-- Кнопка — в теле карточки, над подвалом с инструкцией. -->
+            <Block class="section-card__action">
                 <Button fill large disabled={refillBusy} onClick={refill}>{$t('settings.oil.refill.button')}</Button>
             </Block>
-            <Block mediumInset>
-                <p><i>{$t('settings.oil.refill.p1')}</i></p>
-                <p><i>{$t('settings.oil.refill.p2')}</i></p>
-                <p><i>{$t('settings.oil.tank', {values: {p: oil.cap, q: (oil.q / 10).toFixed(1)}})}</i></p>
-            </Block>
+            <SectionInstr>
+                <p>{$t('settings.oil.refill.p1')}</p>
+                <p>{$t('settings.oil.refill.p2')}</p>
+                <p>{$t('settings.oil.tank', {values: {p: oil.cap, q: (oil.q / 10).toFixed(1)}})}</p>
+            </SectionInstr>
         </div>
         {/if}
 
@@ -68,27 +72,6 @@
     <!-- Управление обучением включения выключения -->
         <div class="section-card">
             <BlockTitle ><span>{$t('service.system.onoff.title')}</span></BlockTitle>
-            <!--
-              ! Текст свёрнут: в карточке остаются только заголовок и тумблер.
-              ! Состояние показывает шеврон (см. .section-more в css/app.less).
-            -->
-            <button class="section-more" class:is-open={instrOnoff} aria-expanded={instrOnoff} onclick={() => instrOnoff = !instrOnoff}>
-              <span>{$t('service.system.instr.title')}</span>
-              <span class="section-more__chev">▾</span>
-            </button>
-            {#if instrOnoff}
-            <Block mediumInset>
-              <p><i>{$t('service.system.onoff.block.p1')}<br></i></p>
-              <p><i style="font-weight: 600">{$t('attention.title').toUpperCase()}</i>
-                <i>{$t('service.system.onoff.block.p2')}</i>
-              </p>
-              <p>{$t('service.system.onoff.block.p3')}</p>
-              <p>{$t('service.system.onoff.block.p4')}</p>
-              <p>{$t('service.system.onoff.block.p5')}</p>
-              <p>{$t('service.system.onoff.block.p6')}</p>
-              <p>{$t('service.system.onoff.block.p7')}</p>
-            </Block>
-            {/if}
             <List >
                 <ListItem class="row-tint">
                   {#if !AItraining}
@@ -99,38 +82,36 @@
                     <div class="item-cell width-auto flex-shrink-4"><Toggle bind:checked={AItraining} bind:disabled={disabled}  /></div>
                 </ListItem>
             </List>
+            <SectionInstr>
+              <p>{$t('service.system.onoff.block.p1')}</p>
+              <p><b>{$t('attention.title').toUpperCase()}</b> {$t('service.system.onoff.block.p2')}</p>
+              <p>{$t('service.system.onoff.block.p3')}</p>
+              <p>{$t('service.system.onoff.block.p4')}</p>
+              <p>{$t('service.system.onoff.block.p5')}</p>
+              <p>{$t('service.system.onoff.block.p6')}</p>
+              <p>{$t('service.system.onoff.block.p7')}</p>
+            </SectionInstr>
         </div>
 
         <!-- Управление режимом определения Fake GPS -->
-        {#if (locale === "ru" || locale === "RU")}
         <div class="section-card">
             <BlockTitle ><span>{$t('service.system.fakegps.title')}</span></BlockTitle>
-            <button class="section-more" class:is-open={instrFakegps} aria-expanded={instrFakegps} onclick={() => instrFakegps = !instrFakegps}>
-              <span>{$t('service.system.instr.title')}</span>
-              <span class="section-more__chev">▾</span>
-            </button>
-            {#if instrFakegps}
-            <Block mediumInset>
-              <p><i>{$t('service.system.fakegps.title')}
-                Включает возможность обнаружения спуффинга сигнала GPS и интеллектуального переключения между
-                режимами работы "Одометр" и "Таймер".<br>
-                </i>
-              </p>
-              <p><i>
-                При обнаружении спуффинга или глушения сигнала GPS иконка  <Icon icon="icon-gps" style='color: red;'/> во вкладке "Телеметрия" будет отображаться красным цветом.
-              </i>
-              </p>
-              <p><i style="font-weight: 600">ПРЕДУПРЕЖДЕНИЕ!</i> <i>Функция экспериментальная.</i></p>
-            </Block>
-            {/if}
             <List >
                 <ListItem class="row-tint">
                     <div class="item-cell width-auto flex-shrink-0 list-input__label list-input__label-text_color">{$t('service.system.fakegps.text_toggle')}</div>
                     <div class="item-cell width-auto flex-shrink-4"><Toggle bind:checked={tmpSystem.fake}  /></div>
                 </ListItem>
             </List>
+            <SectionInstr>
+              <p>{$t('service.system.fakegps.title')}. {$t('service.system.fakegps.block.p1')}</p>
+              <p>
+                {$t('service.system.fakegps.block.p2a')}
+                <Icon icon="icon-gps" class="card-footer-tele__icon--bad"/>
+                {$t('service.system.fakegps.block.p2b')}
+              </p>
+              <p><b>{$t('service.system.fakegps.block.warn')}</b> {$t('service.system.fakegps.block.p3')}</p>
+            </SectionInstr>
         </div>
-        {/if}
     {/if}
 
 </Page>
@@ -153,13 +134,14 @@
     } from 'framework7-svelte';
     import {t} from '../../services/i18n.js';
     import Ranges from '../../components/range-param.svelte'
+    import SectionInstr from '../../components/section-instr.svelte'
     import store from '../../js/store.js';
     import log from '../../js/debug.js';
 
 
     let connected = useStore('connected', (value) => connected = value);
     let system = useStore('system', (value) => system = value);
-    let mapSettings = useStore('mapSettings', (value) => mapSettings = value);
+    let pending = useStore('pending', (value) => pending = value);
     let pump = useStore('pump', (value) => pump = value);
     let oil = useStore('oil', (value) => oil = value);
 
@@ -181,22 +163,12 @@
         }
       })
     }
-    //let locale = useStore('locale', (value) => locale = value);
-    let locale = "ru"
 
     let tmpSystem = system
     let ctrlpump = false
     let AItraining = false
     let disabled = false
 
-    /**
-     * ! Тексты-инструкции секций свёрнуты по умолчанию (см. разметку выше).
-     *
-     * Два отдельных флага, а не объект: в Svelte 5 правка поля объекта не считается
-     * изменением состояния — его пришлось бы переприсваивать целиком.
-     */
-    let instrOnoff = false;
-    let instrFakegps = false;
     //let fakegps = false;
 
     // ! Длительность импульса прокачки — по типу насоса PMP.type (поле type
@@ -260,7 +232,7 @@
     function pageAfteOut() {
       /* включить автоматический режим работы смазчика */
       store.dispatch('modeWork', store.state.OILER_AUTO)
-      mapSettings.set("bright", tmpSystem.bright)
+      pending.system.set("bright", tmpSystem.bright)
       store.dispatch('sendSystem', tmpSystem)
     }
 
