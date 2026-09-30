@@ -103,6 +103,22 @@ const COMMAND_TIMEOUT_MS = 8000;
 const FORCE_CONNECTED = import.meta.env.DEV;
 
 /**
+ * ! ОТЛАДКА: без устройства показывать настройки текущей прошивки (микропорции).
+ *
+ * Зачем: вид «Настроек» решает oil.micro из GET /settings/oil. Без устройства
+ * запрос не проходит, и оставалось умолчание micro = false — вид прошивки до
+ * 27.09.2026 (пресеты расстояния/времени, без страницы «Масло») вперемешку с
+ * новыми частями, которые от micro не зависят. Поэтому при `npm run dev` по
+ * умолчанию micro и supported — true; прежний вид — параметр адреса `?micro=0`
+ * (например, localhost:8080/?micro=0). Ответ устройства, если оно доступно,
+ * значения всё равно заменит.
+ *
+ * Привязка к `import.meta.env.DEV`, как у FORCE_CONNECTED: в собранном
+ * интерфейсе (в прошивке) умолчание прежнее — false.
+ */
+const DEV_OIL_MICRO = import.meta.env.DEV && getUrlVar()['micro'] !== '0';
+
+/**
  * ! ОТЛАДКА: подавление окон «Команда не выполнена!».
  *
  * Зачем: при отладке интерфейса устройство недоступно, поэтому КАЖДЫЙ запрос
@@ -399,13 +415,15 @@ const store = createStore({
     // ! supported — не поле прошивки: ставится после успешного GET /settings/oil
     //   (учёт масла есть и в прежнем алгоритме подачи). По нему «Сервис → Система»
     //   показывает карточку «Заправка».
+    //
+    // ! При `npm run dev` умолчание micro/supported — true (DEV_OIL_MICRO).
     oil: {
       id: "/oil.json",
       lvl: 0,
       cap: 90,
       q: 167,
-      micro: false,
-      supported: false
+      micro: DEV_OIL_MICRO,
+      supported: DEV_OIL_MICRO
     },
     system: {
       id: "/system.json",

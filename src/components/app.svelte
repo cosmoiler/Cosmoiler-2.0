@@ -15,6 +15,7 @@
   import store from '../js/store';
   import { initBackButton } from '../js/backButton.js';
   import { initTabReset } from '../js/tabReset.js';
+  import { initKeepAwake } from '../js/keepAwake.js';
   import Main from '../pages/appview.svelte';
 
   // Framework7 Parameters
@@ -53,6 +54,8 @@
       initBackButton(f7)
       // Смена вкладки закрывает вложенную страницу (её выход: сохранение, /state/auto)
       initTabReset(f7)
+      // Экран телефона не гаснет, пока открыт интерфейс (с первого касания)
+      initKeepAwake()
     });
   })
 
