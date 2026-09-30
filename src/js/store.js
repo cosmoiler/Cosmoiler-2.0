@@ -455,7 +455,9 @@ const store = createStore({
     },
     odometer: {
       id: "/trip.json",
-      smart: { predict: 5, avgsp: 80, maxsp: 150 },
+      // lvl — ручка дозы микропорций «ПО ПРОБЕГУ» и TimerGps (−5…+5, ODO.SMR.lvl,
+      // прошивка с 01.10.2026, firmware docs/config.md §1.1).
+      smart: { predict: 5, avgsp: 80, maxsp: 150, lvl: 0 },
       sensor: { gnss: true, imp: 16, hdop: 5000 },
       presets: [
           { dst_m: 4000, num: 2, imp_m: 0, n: 5, cycles: 0 },
@@ -469,7 +471,8 @@ const store = createStore({
     },
     timer: {
       id: "/time.json",
-      smart: { trail: true, predict: 600 },
+      // lvl — ручка дозы микропорций «ПО ВРЕМЕНИ» (−5…+5, TMR.SMR.lvl).
+      smart: { trail: true, predict: 600, lvl: 0 },
       presets: [
           { time: 120, num: 2, cycles: 0 },
           { time: 0, num: 0, cycles: 0 },
@@ -486,9 +489,10 @@ const store = createStore({
       usr: false, // пользовательский насос
       type: ""    // тип насоса (PMP.type): 'A', 'B', 'C' — от него предел dpms в pump.svelte
     },
-    // Масло (/settings/oil, firmware docs/oil.md): lvl — ручка дозы микропорций
-    // −5…+5 (шаг ×1.25, пишется), cap — объём бачка, мл, q — расход насоса,
-    // мкл/с × 10, micro — прошивка подаёт масло микропорциями (только чтение).
+    // Масло (/settings/oil, firmware docs/oil.md) — только чтение: cap — объём
+    // бачка, мл, q — расход насоса, мкл/с × 10, micro — прошивка подаёт масло
+    // микропорциями. Ручки дозы с 01.10.2026 раздельные — smart.lvl одометра и
+    // таймера (sendDoseLevel); до этого было одно поле lvl здесь.
     //
     // ! micro решает, какие настройки показывать: при микропорциях пресеты
     //   расстояния/времени и объём насоса на подачу не влияют и спрятаны, доза
@@ -502,7 +506,6 @@ const store = createStore({
     // ! При `npm run dev` умолчание micro/supported — true (DEV_OIL_MICRO).
     oil: {
       id: "/oil.json",
-      lvl: 0,
       cap: 90,
       q: 167,
       micro: DEV_OIL_MICRO,
@@ -855,24 +858,30 @@ const store = createStore({
     },
 
     /**
-     * Ручка дозы «меньше/больше» (firmware docs/oil.md). Прошивка применяет её
-     * к микропорциям сразу после записи, поэтому задержка короткая (300 мс —
-     * только чтобы не слать каждый шаг ползунка), как у ручного режима.
+     * Ручка дозы «меньше/больше» своего режима (firmware docs/oil-dose.md §7):
+     * timer = false — одометр (smart.lvl в /settings/trip, действует в «ПО
+     * ПРОБЕГУ» и TimerGps), true — таймер (/settings/time, «ПО ВРЕМЕНИ»).
+     *
+     * ! Уходит ВЕСЬ объект smart через очередь раздела, а не одно поле: прошивка
+     *   (loadSmart) у отсутствующего maxsp берёт не прежнее значение, а предел.
+     *   Задержка короткая (300 мс — только чтобы не слать каждый шаг ползунка):
+     *   прошивка применяет ручку сразу. Ключ deferSend общий с sendDistance /
+     *   sendTime — ждущие правки раздела уходят тем же запросом.
      */
-    sendOil({state}, lvl) {
-      state.oil.lvl = lvl
-      state.oil = state.oil
-      deferSend('oil', () => {
-        deviceRequest('/settings/oil', { method: 'POST', data: { lvl: state.oil.lvl } })
-          .then((res) => { log(res) })
-          .catch(() => {
-            commandFailed(tr('error.command'))
-            deviceRequest('/settings/oil')
-              .then((response) => { state.oil = { ...JSON.parse(response.data), supported: true } })
-              .catch(() => { /* связь отслеживает сторож */ })
-          })
-        log("send Oil = ", state.oil)
-      }, 300)
+    sendDoseLevel({state}, {timer, lvl}) {
+      const section = timer ? 'time' : 'trip'
+      if (timer) {
+        state.timer.smart.lvl = lvl
+        state.timer = state.timer
+      } else {
+        state.odometer.smart.lvl = lvl
+        state.odometer = state.odometer
+      }
+      const smart = timer ? state.timer.smart : state.odometer.smart
+      state.pending[section].set('smart', smart)
+      deferSend(section, () => sendPending(state, section,
+        timer ? '/settings/time' : '/settings/trip',
+        timer ? (t) => applyTimer(state, t) : (o) => { state.odometer = o }), 300)
     },
 
     /**

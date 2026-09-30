@@ -108,12 +108,16 @@
   // ! Микропорции (oil.micro): расстояния и время пресетов на подачу не влияют,
   //   поэтому под режимами — доза (ручка «меньше/больше»), ОФФРОУД ×3 и остаток
   //   масла (params[6] телеметрии; у прошивки без него — не показываем).
-  $: microIcons = [
-    {name: "icon-drop", text: $t('home.setting.dose', {values: {p: (oil.lvl > 0 ? '+' : '') + oil.lvl}})},
-    {name: "icon-off-road", text: "×3"},
-    ...((telemetry && telemetry.params && telemetry.params[6])
-        ? [{name: "icon-addoil", text: telemetry.params[6].oil + " %"}] : []),
-  ]
+  //   Ручки дозы у режимов раздельные (прошивка с 01.10.2026) — smart.lvl
+  //   одометра и таймера, поэтому набор значков строится для каждого режима.
+  const doseIcon = (lvl) => {
+    const v = Number(lvl) || 0
+    return {name: "icon-drop", text: $t('home.setting.dose', {values: {p: (v > 0 ? '+' : '') + v}})}
+  }
+  $: oilIcons = (telemetry && telemetry.params && telemetry.params[6])
+      ? [{name: "icon-addoil", text: telemetry.params[6].oil + " %"}] : []
+  $: microIconsOdo = [doseIcon(odometer.smart.lvl), {name: "icon-off-road", text: "×3"}, ...oilIcons]
+  $: microIconsTmr = [doseIcon(timer.smart.lvl), {name: "icon-off-road", text: "×3"}, ...oilIcons]
 
   let fmodeOdometer
   let fmodeTimer
@@ -135,7 +139,7 @@
         titleIcon: "icon-route",
         gpsIcon: "icon-gps",
         gnss: gnssPresent.gps,
-        icons: oil.micro ? microIcons : [
+        icons: oil.micro ? microIconsOdo : [
           {name: "icon-city", text: $t('home.setting.trip', {values: {p: odometer.presets[store.state.presets.CITY].dst_m / 1000}})},
           {name: "icon-way", text: $t('home.setting.trip', {values: {p: odometer.presets[store.state.presets.WAY].dst_m / 1000}})},
           {name: "icon-off-road", text: $t('home.setting.trip', {values: {p: odometer.presets[store.state.presets.OFFROAD].dst_m / 1000}})},
@@ -158,7 +162,7 @@
         title: $t("home.time.title").toUpperCase(),
         subtitle: $t("home.time.subtitle"),
         titleIcon: "icon-timer",
-        icons: oil.micro ? microIcons : [
+        icons: oil.micro ? microIconsTmr : [
           {name: "icon-city", text: $t('home.setting.time', {values: {p: timer.presets[store.state.presets.CITY].time}})},
          /*  {name: "icon-way", text: $t('home.setting.time', {values: {p: time.presets[1].dp_time}})}, */
           {name: "icon-off-road", text: $t('home.setting.time', {values: {p: timer.presets[store.state.presets.OFFROAD].time}})},

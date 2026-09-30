@@ -1,10 +1,10 @@
 <!--
   ! Масло: настройки дозы микропорций (firmware docs/oil.md, docs/oil-dose.md §7).
   !
-  !   GET/POST /settings/oil — {lvl, cap, q, micro}: пишется только lvl (−5…+5).
-  !
   ! Страница открывается с вкладок «Одометр» (/settings/oil/) и «Таймер»
-  ! (/settings/oil/timer/, проп timer = true — routes.js). Остаток масла — на вкладке
+  ! (/settings/oil/timer/, проп timer = true — routes.js). Ручки дозы у режимов
+  ! раздельные (прошивка с 01.10.2026): с «Одометра» — smart.lvl в /settings/trip,
+  ! с «Таймера» — в /settings/time (−5…+5); /settings/oil — только чтение. Остаток масла — на вкладке
   ! «Телеметрия», заправка — в «Сервис → Система» (решение пользователя 28.09.2026).
 -->
 <Page
@@ -59,6 +59,7 @@
   let connected = useStore('connected', (value) => connected = value);
   let oil = useStore('oil', (value) => oil = value);
   let odometer = useStore('odometer', (value) => odometer = value);
+  let timerCfg = useStore('timer', (value) => timerCfg = value);
   let pending = useStore('pending', (value) => pending = value);
 
   // Макс. скорость (ODO.SMR.max) — как на странице пресетов одометра: только
@@ -85,10 +86,13 @@
   // Шаг ручки ×1.25 на деление (COSMOILER_DOSE_STEP_PCT, firmware docs/oil-dose.md §7).
   const STEP = 1.25
 
+  // Ручка своего режима; у прошивки без раздельных ручек поля нет — 0.
+  $: level = Number((timer ? timerCfg : odometer).smart.lvl) || 0
+
   $: doseRange = {
     title: $t('settings.oil.dose'),
-    value: oil.lvl,
-    name_value: '(×' + Math.pow(STEP, oil.lvl).toFixed(2) + ')',
+    value: level,
+    name_value: '(×' + Math.pow(STEP, level).toFixed(2) + ')',
     minValue: -5,
     maxValue: 5,
     stepValue: 1,
@@ -99,8 +103,8 @@
     icon: 'icon-drop',
     icon2: 'icon-dropfill',
     rangeChange: (e) => {
-      if (e !== oil.lvl)
-        store.dispatch('sendOil', e)
+      if (e !== level)
+        store.dispatch('sendDoseLevel', { timer, lvl: e })
     }
   }
 </script>

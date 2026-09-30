@@ -83,13 +83,23 @@
   //   без учёта времени езды набирается за ~2 км). Вместо расстояния/времени
   //   пресета у иконки пресета — доза (ручка «меньше/больше»).
   const MICRO_SCALE_M = 2000
-  let doseText = (lvl) => $t('home.setting.dose', {values: {p: (lvl > 0 ? '+' : '') + lvl}})
+  //   Ручки дозы раздельные (прошивка с 01.10.2026): одометр — smart.lvl одометра,
+  //   он же действует в TimerGps («таймер без спутников» внутри «ПО ПРОБЕГУ»);
+  //   «ПО ВРЕМЕНИ» — smart.lvl таймера.
+  let doseText = (lvl) => {
+    const v = Number(lvl) || 0
+    return $t('home.setting.dose', {values: {p: (v > 0 ? '+' : '') + v}})
+  }
   let presetValueOdo = (telemetry) => oil.micro
-    ? doseText(oil.lvl)
+    ? doseText(odometer.smart.lvl)
     : (odometer.presets[indexPreset(telemetry)].dst_m/1000).toFixed() + $t("all.km")
   let presetValueTmr = (telemetry) => oil.micro
-    ? doseText(oil.lvl)
+    ? doseText(timer.smart.lvl)
     : timer.presets[indexPreset(telemetry)].time + $t("all.seconds")
+  // TimerGps: без микропорций — время пресета таймера (как было), с ними — ручка одометра.
+  let presetValueTmrGps = (telemetry) => oil.micro
+    ? doseText(odometer.smart.lvl)
+    : presetValueTmr(telemetry)
   let remainsScale = (telemetry) => oil.micro
     ? Math.min(remainsTrip(odometer, gnssPresent.gps, telemetry.params[nameParams.ODOMETER]) / MICRO_SCALE_M, 1)
     : remainsTrip(odometer, gnssPresent.gps, telemetry.params[nameParams.ODOMETER])/odometer.presets[indexPreset(telemetry)].dst_m
@@ -163,7 +173,7 @@
       if (!telemetry.params[nameParams.GPS].fix)
         return {
           icon: "icon-clock",
-          value: presetValueTmr(telemetry)
+          value: presetValueTmrGps(telemetry)
         }
       return gpsIcon(telemetry)
     }
@@ -310,7 +320,7 @@ $:  dataCardTele = [
           units: "" }
       ],
       icons: [
-        {icon: oil.micro ? "icon-drop" : iconsPreset[indexPreset(telemetry)], value: presetValueTmr(telemetry)},
+        {icon: oil.micro ? "icon-drop" : iconsPreset[indexPreset(telemetry)], value: presetValueTmrGps(telemetry)},
         {icon: "icon-pump", value: telemetry.params[nameParams.PUMP].v},
         (gnssPresent.gps) ? gpsIcon(telemetry) : null,
         {
