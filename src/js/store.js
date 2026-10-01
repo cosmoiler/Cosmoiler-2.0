@@ -413,6 +413,17 @@ function sendPending(state, section, path, apply) {
     });
 }
 
+/**
+ * Множители ОФФРОУДА, которые предлагает веб (dose.x, %): прошивка принимает
+ * 25…500, список — firmware docs/config.md §1.1. По умолчанию 300 (×3).
+ */
+export const DOSE_X = Object.freeze([25, 30, 50, 75, 100, 150, 200, 300, 400, 500]);
+
+/** Множитель ОФФРОУДА для показа: 300 → «×3», 25 → «×0.25». */
+export function doseXText(x) {
+  return '×' + (Number(x) || 300) / 100;
+}
+
 /** Адреса команд смены режима смазчика (modeWork). */
 const MODE_PATHS = {
   0: '/state/auto',     // OILER_AUTO
@@ -455,9 +466,11 @@ const store = createStore({
     },
     odometer: {
       id: "/trip.json",
-      // lvl — ручка дозы микропорций «ПО ПРОБЕГУ» и TimerGps (−5…+5, ODO.SMR.lvl,
-      // прошивка с 01.10.2026, firmware docs/config.md §1.1).
-      smart: { predict: 5, avgsp: 80, maxsp: 150, lvl: 0 },
+      smart: { predict: 5, avgsp: 80, maxsp: 150 },
+      // Микропорции (прошивка с 01.10.2026, firmware docs/config.md §1.1): lvl —
+      // ручка «масло» АСФАЛЬТА −5…+5 (ODO.PRS0.lvl, действует и в TimerGps),
+      // x — множитель ОФФРОУДА, % (25…500, ODO.PRS1.x). См. DOSE_X.
+      dose: { lvl: 0, x: 300 },
       sensor: { gnss: true, imp: 16, hdop: 5000 },
       presets: [
           { dst_m: 4000, num: 2, imp_m: 0, n: 5, cycles: 0 },
@@ -471,8 +484,11 @@ const store = createStore({
     },
     timer: {
       id: "/time.json",
-      // lvl — ручка дозы микропорций «ПО ВРЕМЕНИ» (−5…+5, TMR.SMR.lvl).
-      smart: { trail: true, predict: 600, lvl: 0 },
+      smart: { trail: true, predict: 600 },
+      // Микропорции «ПО ВРЕМЕНИ»: lvl — ручка АСФАЛЬТА (TMR.PRS0.lvl), x —
+      // множитель ОФФРОУДА (TMR.PRS1.x); «порция каждые tm с» — presets[0].time
+      // (TMR.PRS0.tm, 10…600 с).
+      dose: { lvl: 0, x: 300 },
       presets: [
           { time: 120, num: 2, cycles: 0 },
           { time: 0, num: 0, cycles: 0 },
@@ -491,8 +507,8 @@ const store = createStore({
     },
     // Масло (/settings/oil, firmware docs/oil.md) — только чтение: cap — объём
     // бачка, мл, q — расход насоса, мкл/с × 10, micro — прошивка подаёт масло
-    // микропорциями. Ручки дозы с 01.10.2026 раздельные — smart.lvl одометра и
-    // таймера (sendDoseLevel); до этого было одно поле lvl здесь.
+    // микропорциями. Ручки дозы с 01.10.2026 — dose.lvl одометра и таймера,
+    // множители ОФФРОУДА — dose.x (sendDose); до этого было одно поле lvl здесь.
     //
     // ! micro решает, какие настройки показывать: при микропорциях пресеты
     //   расстояния/времени и объём насоса на подачу не влияют и спрятаны, доза
@@ -858,27 +874,32 @@ const store = createStore({
     },
 
     /**
-     * Ручка дозы «меньше/больше» своего режима (firmware docs/oil-dose.md §7):
-     * timer = false — одометр (smart.lvl в /settings/trip, действует в «ПО
-     * ПРОБЕГУ» и TimerGps), true — таймер (/settings/time, «ПО ВРЕМЕНИ»).
+     * Микропорции своего режима (firmware docs/oil-dose.md §7–8, docs/config.md
+     * §1.1): timer = false — одометр (/settings/trip, «ПО ПРОБЕГУ» и TimerGps),
+     * true — таймер (/settings/time, «ПО ВРЕМЕНИ»). Поля необязательные:
+     *   lvl  — ручка «масло» АСФАЛЬТА −5…+5 (dose.lvl);
+     *   x    — множитель ОФФРОУДА, % (dose.x, одно из DOSE_X);
+     *   time — только таймер: «порция каждые time с», 10…600 (presets[0].time).
      *
-     * ! Уходит ВЕСЬ объект smart через очередь раздела, а не одно поле: прошивка
-     *   (loadSmart) у отсутствующего maxsp берёт не прежнее значение, а предел.
-     *   Задержка короткая (300 мс — только чтобы не слать каждый шаг ползунка):
-     *   прошивка применяет ручку сразу. Ключ deferSend общий с sendDistance /
-     *   sendTime — ждущие правки раздела уходят тем же запросом.
+     * ! Уходят объект dose целиком и (для time) пресеты таймера [АСФАЛЬТ, PRS2]:
+     *   прошивка берёт присланные поля, остальные оставляет. Задержка короткая
+     *   (300 мс — только чтобы не слать каждый шаг ползунка): прошивка применяет
+     *   дозу сразу. Ключ deferSend общий с sendDistance / sendTime — ждущие
+     *   правки раздела уходят тем же запросом.
      */
-    sendDoseLevel({state}, {timer, lvl}) {
+    sendDose({state}, {timer, lvl, x, time}) {
       const section = timer ? 'time' : 'trip'
-      if (timer) {
-        state.timer.smart.lvl = lvl
-        state.timer = state.timer
-      } else {
-        state.odometer.smart.lvl = lvl
-        state.odometer = state.odometer
+      const cfg = timer ? state.timer : state.odometer
+      if (lvl !== undefined) cfg.dose.lvl = lvl
+      if (x !== undefined) cfg.dose.x = x
+      state.pending[section].set('dose', cfg.dose)
+      if (timer && time !== undefined) {
+        cfg.presets[state.presets.CITY].time = time
+        state.pending.time.set('presets',
+          [cfg.presets[state.presets.CITY], cfg.presets[state.presets.OFFROAD]])
       }
-      const smart = timer ? state.timer.smart : state.odometer.smart
-      state.pending[section].set('smart', smart)
+      if (timer) state.timer = state.timer
+      else state.odometer = state.odometer
       deferSend(section, () => sendPending(state, section,
         timer ? '/settings/time' : '/settings/trip',
         timer ? (t) => applyTimer(state, t) : (o) => { state.odometer = o }), 300)

@@ -26,10 +26,12 @@
   ! малозаметно, но внутри .section-card полоса получает фон шапки, и в карточке
   ! появлялся лишний бежевый прямоугольник между пояснением и строкой со шкалой.
 -->
-{#if title || name_value}
+{#if title || name_value || valueText !== undefined}
 <BlockTitle class="display-flex justify-content-space-between">
     <span>{title}</span>
-    {#if name_value}
+    {#if valueText !== undefined}
+      <span style="color: var(--f7-theme-color-change-text)">{valueText}</span>
+    {:else if name_value}
       <span style="color: var(--f7-theme-color-change-text)">{value} {name_value}</span>
     {/if}
   </BlockTitle>
@@ -113,7 +115,9 @@
   export let title = ""
   export let value = 0
   export let name_value = ""
-  export let view_value = true
+  /* Подпись значения целиком, вместо «value name_value» — когда шкала идёт по
+   * номерам, а показать нужно другое (множитель ОФФРОУДА: деление 7 → «×3»). */
+  export let valueText = undefined
   export let icon = undefined
   export let minValue = 0
   export let maxValue = 10

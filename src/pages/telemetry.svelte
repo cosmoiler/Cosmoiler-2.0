@@ -40,7 +40,7 @@
         <div class="card-footer-tele__icon-text oil-card__item">
           <Icon icon="icon-addoil" class={`card-footer-tele__icon${oilTele.low == 1 ? ' card-footer-tele__icon--bad' : ''}`} />
           <span class="oil-card__km">
-            {oilTele.km >= 0 ? $t('settings.oil.km', {values: {p: oilTele.km}}) : $t('settings.oil.km.unknown')}
+            {oilLeftText(oilTele, telemetry)}
           </span>
         </div>
       </CardFooter>
@@ -67,7 +67,7 @@
   import {t} from '../services/i18n.js';
   import CardTelemetry from '../components/tele-card.svelte'
   import OilLevel from '../components/oil-level.svelte'
-  import store from '../js/store';
+  import store, { doseXText } from '../js/store';
   import { fade, fly } from 'svelte/transition';
   import log from '../js/debug.js'
 
@@ -83,22 +83,25 @@
   //   без учёта времени езды набирается за ~2 км). Вместо расстояния/времени
   //   пресета у иконки пресета — доза (ручка «меньше/больше»).
   const MICRO_SCALE_M = 2000
-  //   Ручки дозы раздельные (прошивка с 01.10.2026): одометр — smart.lvl одометра,
+  //   Ручки дозы раздельные (прошивка с 01.10.2026): одометр — dose.lvl одометра,
   //   он же действует в TimerGps («таймер без спутников» внутри «ПО ПРОБЕГУ»);
-  //   «ПО ВРЕМЕНИ» — smart.lvl таймера.
-  let doseText = (lvl) => {
-    const v = Number(lvl) || 0
-    return $t('home.setting.dose', {values: {p: (v > 0 ? '+' : '') + v}})
+  //   «ПО ВРЕМЕНИ» — dose.lvl таймера. В ОФФРОУДЕ (mode.p) к ручке дописан
+  //   множитель своего режима (dose.x): «П: +1 ×3».
+  let doseText = (dose, telemetry) => {
+    const v = Number(dose?.lvl) || 0
+    const text = $t('home.setting.dose', {values: {p: (v > 0 ? '+' : '') + v}})
+    return indexPreset(telemetry) == store.state.presets.OFFROAD
+      ? text + ' ' + doseXText(dose?.x) : text
   }
   let presetValueOdo = (telemetry) => oil.micro
-    ? doseText(odometer.smart.lvl)
+    ? doseText(odometer.dose, telemetry)
     : (odometer.presets[indexPreset(telemetry)].dst_m/1000).toFixed() + $t("all.km")
   let presetValueTmr = (telemetry) => oil.micro
-    ? doseText(timer.smart.lvl)
+    ? doseText(timer.dose, telemetry)
     : timer.presets[indexPreset(telemetry)].time + $t("all.seconds")
   // TimerGps: без микропорций — время пресета таймера (как было), с ними — ручка одометра.
   let presetValueTmrGps = (telemetry) => oil.micro
-    ? doseText(odometer.smart.lvl)
+    ? doseText(odometer.dose, telemetry)
     : presetValueTmr(telemetry)
   let remainsScale = (telemetry) => oil.micro
     ? Math.min(remainsTrip(odometer, gnssPresent.gps, telemetry.params[nameParams.ODOMETER]) / MICRO_SCALE_M, 1)
@@ -120,6 +123,49 @@
   // Остаток масла в бачке (params[6], прошивка с 27.09.2026, docs/oil.md) —
   // отдельная карточка под карточкой режима. У старой прошивки элемента нет.
   $: oilTele = telemetry.params[nameParams.OIL]
+
+  /*
+   * ! Оценка «хватит на…» в подвале карточки «Остаток».
+   *
+   * Километры (params[6].km) прошивка считает по фактическому расходу на путь с
+   * заправки — путь даёт GPS или датчик скорости. В «ПО ВРЕМЕНИ» источника
+   * скорости часто нет: km навсегда -1, и прежняя подпись «появится после 5 км»
+   * вводила в заблуждение (решение пользователя 01.10.2026). Поэтому в «ПО
+   * ВРЕМЕНИ» (m = 2) — часы езды:
+   *   * params[6].h, если прошивка его отдаёт (задача главной сессии, -1 — нет);
+   *   * иначе — расчёт здесь, по той же модели, что у прошивки (docs/oil-dose.md
+   *     §8): порция PORTION_MS каждые tm с (timer.presets[0].time) × ручка
+   *     1.25^lvl × (ОФФРОУД) множитель x; остаток — oil % × cap мл; расход
+   *     насоса — oil.q (мкл/с × 10). Только при микропорциях.
+   */
+  const PORTION_MS = 500 // COSMOILER_PORTION_MS
+  const DOSE_STEP = 1.25 // COSMOILER_DOSE_STEP_PCT
+
+  const timerHoursLeft = (o, telemetry) => {
+    if (o.h !== undefined) return Number(o.h)
+    if (!oil.micro || !(oil.cap > 0) || !(oil.q > 0)) return -1
+    const tm = Number(timer.presets?.[0]?.time) || 0
+    if (tm <= 0) return -1
+    const lvl = Number(timer.dose?.lvl) || 0
+    const mul = indexPreset(telemetry) == store.state.presets.OFFROAD
+      ? (Number(timer.dose?.x) || 300) / 100 : 1
+    const pumpMsPerHour = PORTION_MS / (tm * 1000) * Math.pow(DOSE_STEP, lvl) * mul * 3600 * 1000
+    const ulPerHour = pumpMsPerHour / 1000 * oil.q / 10
+    const leftUl = o.oil / 100 * oil.cap * 1000
+    return ulPerHour > 0 ? leftUl / ulPerHour : -1
+  }
+
+  const oilLeftText = (o, telemetry) => {
+    if (telemetry.params[nameParams.MODE].m == 2) {
+      const h = timerHoursLeft(o, telemetry)
+      if (h >= 0)
+        return $t('settings.oil.hours', {values: {p: h < 10 ? h.toFixed(1) : Math.round(h)}})
+      return $t('settings.oil.hours.unknown')
+    }
+    return o.km >= 0
+      ? $t('settings.oil.km', {values: {p: o.km}})
+      : $t('settings.oil.km.unknown')
+  }
 
   let valueTimer = (data) => {
     let  myDate = new Date(0, 0, 0, 0, 0, 0, data.v);

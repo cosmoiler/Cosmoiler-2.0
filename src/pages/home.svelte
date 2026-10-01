@@ -91,7 +91,7 @@
   } from 'framework7-svelte';
   import { f7 } from 'framework7-svelte';
   import {t} from '../services/i18n.js';
-  import store from '../js/store';
+  import store, { doseXText } from '../js/store';
   import ModeItem from '../components/home-listitem.svelte'
   import { fade, fly } from 'svelte/transition';
   import log from '../js/debug.js'
@@ -106,18 +106,22 @@
   let telemetry = useStore('telemetry', (value) => telemetry = value);
 
   // ! Микропорции (oil.micro): расстояния и время пресетов на подачу не влияют,
-  //   поэтому под режимами — доза (ручка «меньше/больше»), ОФФРОУД ×3 и остаток
-  //   масла (params[6] телеметрии; у прошивки без него — не показываем).
-  //   Ручки дозы у режимов раздельные (прошивка с 01.10.2026) — smart.lvl
-  //   одометра и таймера, поэтому набор значков строится для каждого режима.
+  //   поэтому под режимами — доза АСФАЛЬТА (ручка «меньше/больше»), множитель
+  //   ОФФРОУДА и остаток масла (params[6] телеметрии; у прошивки без него — не
+  //   показываем). Ручка и множитель у режимов свои (прошивка с 01.10.2026,
+  //   dose.lvl / dose.x одометра и таймера) — набор значков для каждого режима.
   const doseIcon = (lvl) => {
     const v = Number(lvl) || 0
     return {name: "icon-drop", text: $t('home.setting.dose', {values: {p: (v > 0 ? '+' : '') + v}})}
   }
   $: oilIcons = (telemetry && telemetry.params && telemetry.params[6])
       ? [{name: "icon-addoil", text: telemetry.params[6].oil + " %"}] : []
-  $: microIconsOdo = [doseIcon(odometer.smart.lvl), {name: "icon-off-road", text: "×3"}, ...oilIcons]
-  $: microIconsTmr = [doseIcon(timer.smart.lvl), {name: "icon-off-road", text: "×3"}, ...oilIcons]
+  const microIcons = (dose, oilIcons) => [
+    doseIcon(dose?.lvl),
+    {name: "icon-off-road", text: doseXText(dose?.x)},
+    ...oilIcons]
+  $: microIconsOdo = microIcons(odometer.dose, oilIcons)
+  $: microIconsTmr = microIcons(timer.dose, oilIcons)
 
   let fmodeOdometer
   let fmodeTimer
