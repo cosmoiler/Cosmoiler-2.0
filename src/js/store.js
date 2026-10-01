@@ -485,9 +485,9 @@ const store = createStore({
     timer: {
       id: "/time.json",
       smart: { trail: true, predict: 600 },
-      // Микропорции «ПО ВРЕМЕНИ»: lvl — ручка АСФАЛЬТА (TMR.PRS0.lvl), x —
-      // множитель ОФФРОУДА (TMR.PRS1.x); «порция каждые tm с» — presets[0].time
-      // (TMR.PRS0.tm, 10…600 с).
+      // Микропорции «ПО ВРЕМЕНИ» — «только ручка»: lvl — ручка АСФАЛЬТА
+      // (TMR.PRS0.lvl), x — множитель ОФФРОУДА (TMR.PRS1.x); интервал пресета
+      // (presets[0].time) при микропорциях прошивка не использует.
       dose: { lvl: 0, x: 300 },
       presets: [
           { time: 120, num: 2, cycles: 0 },
@@ -878,26 +878,20 @@ const store = createStore({
      * §1.1): timer = false — одометр (/settings/trip, «ПО ПРОБЕГУ» и TimerGps),
      * true — таймер (/settings/time, «ПО ВРЕМЕНИ»). Поля необязательные:
      *   lvl  — ручка «масло» АСФАЛЬТА −5…+5 (dose.lvl);
-     *   x    — множитель ОФФРОУДА, % (dose.x, одно из DOSE_X);
-     *   time — только таймер: «порция каждые time с», 10…600 (presets[0].time).
+     *   x    — множитель ОФФРОУДА, % (dose.x, одно из DOSE_X).
      *
-     * ! Уходят объект dose целиком и (для time) пресеты таймера [АСФАЛЬТ, PRS2]:
-     *   прошивка берёт присланные поля, остальные оставляет. Задержка короткая
+     * ! Уходит объект dose целиком: прошивка берёт присланные поля, остальные
+     *   оставляет. Задержка короткая
      *   (300 мс — только чтобы не слать каждый шаг ползунка): прошивка применяет
      *   дозу сразу. Ключ deferSend общий с sendDistance / sendTime — ждущие
      *   правки раздела уходят тем же запросом.
      */
-    sendDose({state}, {timer, lvl, x, time}) {
+    sendDose({state}, {timer, lvl, x}) {
       const section = timer ? 'time' : 'trip'
       const cfg = timer ? state.timer : state.odometer
       if (lvl !== undefined) cfg.dose.lvl = lvl
       if (x !== undefined) cfg.dose.x = x
       state.pending[section].set('dose', cfg.dose)
-      if (timer && time !== undefined) {
-        cfg.presets[state.presets.CITY].time = time
-        state.pending.time.set('presets',
-          [cfg.presets[state.presets.CITY], cfg.presets[state.presets.OFFROAD]])
-      }
       if (timer) state.timer = state.timer
       else state.odometer = state.odometer
       deferSend(section, () => sendPending(state, section,

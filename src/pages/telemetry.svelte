@@ -131,34 +131,14 @@
    * заправки — путь даёт GPS или датчик скорости. В «ПО ВРЕМЕНИ» источника
    * скорости часто нет: km навсегда -1, и прежняя подпись «появится после 5 км»
    * вводила в заблуждение (решение пользователя 01.10.2026). Поэтому в «ПО
-   * ВРЕМЕНИ» (m = 2) — часы езды:
-   *   * params[6].h, если прошивка его отдаёт (задача главной сессии, -1 — нет);
-   *   * иначе — расчёт здесь, по той же модели, что у прошивки (docs/oil-dose.md
-   *     §8): порция PORTION_MS каждые tm с (timer.presets[0].time) × ручка
-   *     1.25^lvl × (ОФФРОУД) множитель x; остаток — oil % × cap мл; расход
-   *     насоса — oil.q (мкл/с × 10). Только при микропорциях.
+   * ВРЕМЕНИ» (m = 2) — часы езды params[6].h («12.5», -1 — оценки нет): их
+   * считает прошивка по модели «только ручка» (firmware docs/oil.md). Прошивка
+   * без поля h — «оценки нет».
    */
-  const PORTION_MS = 500 // COSMOILER_PORTION_MS
-  const DOSE_STEP = 1.25 // COSMOILER_DOSE_STEP_PCT
-
-  const timerHoursLeft = (o, telemetry) => {
-    if (o.h !== undefined) return Number(o.h)
-    if (!oil.micro || !(oil.cap > 0) || !(oil.q > 0)) return -1
-    const tm = Number(timer.presets?.[0]?.time) || 0
-    if (tm <= 0) return -1
-    const lvl = Number(timer.dose?.lvl) || 0
-    const mul = indexPreset(telemetry) == store.state.presets.OFFROAD
-      ? (Number(timer.dose?.x) || 300) / 100 : 1
-    const pumpMsPerHour = PORTION_MS / (tm * 1000) * Math.pow(DOSE_STEP, lvl) * mul * 3600 * 1000
-    const ulPerHour = pumpMsPerHour / 1000 * oil.q / 10
-    const leftUl = o.oil / 100 * oil.cap * 1000
-    return ulPerHour > 0 ? leftUl / ulPerHour : -1
-  }
-
   const oilLeftText = (o, telemetry) => {
     if (telemetry.params[nameParams.MODE].m == 2) {
-      const h = timerHoursLeft(o, telemetry)
-      if (h >= 0)
+      const h = Number(o.h)
+      if (o.h !== undefined && h >= 0)
         return $t('settings.oil.hours', {values: {p: h < 10 ? h.toFixed(1) : Math.round(h)}})
       return $t('settings.oil.hours.unknown')
     }

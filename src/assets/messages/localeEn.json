@@ -78,11 +78,9 @@
 
     "settings.oil.title": "Oil",
     "settings.oil.description.odo": "Asphalt: dose, max speed; off-road: multiplier",
-    "settings.oil.description.tmr": "Asphalt: dose, interval; off-road: multiplier",
+    "settings.oil.description.tmr": "Asphalt: dose; off-road: multiplier",
     "settings.oil.asphalt": "Asphalt",
     "settings.oil.offroad": "Off-road",
-    "settings.oil.every": "A portion every",
-    "settings.oil.every.hint": "A portion is supplied after this time while the motorcycle is moving (neutral sensor). The less/more knob changes the amount of oil.",
     "settings.oil.mul": "Off-road oil",
     "settings.oil.mul.hint": "The off-road dose is the asphalt dose (with the less/more knob) × multiplier. The preset is selected with the button on the unit.",
     "settings.oil.maxspeed.hint": "Above this speed no oil is supplied: the portion is postponed until the speed drops.",

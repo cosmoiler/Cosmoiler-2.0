@@ -9,7 +9,12 @@
   !
   !   режим    | АСФАЛЬТ                                   | ОФФРОУД
   !   Одометр  | ручка dose.lvl, макс. скорость smart.maxsp | множитель dose.x
-  !   Таймер   | ручка dose.lvl, «порция каждые» presets[0].time | множитель dose.x
+  !   Таймер   | ручка dose.lvl                            | множитель dose.x
+  !
+  ! «ПО ВРЕМЕНИ» — «только ручка» (решение пользователя 01.10.2026): масло в час
+  ! задают ручка и множитель (бюджет как при езде 50 км/ч), интервал пресета
+  ! таймера (presets[0].time, TMR.PRS0.tm) при микропорциях не используется —
+  ! поля «Порция каждые … с» здесь больше нет.
   !
   ! Всё уходит в /settings/trip или /settings/time (sendDose, sendDistance);
   ! /settings/oil — только чтение. Остаток масла — на вкладке «Телеметрия»,
@@ -49,13 +54,7 @@
           </SectionInstr>
         </div>
 
-        {#if timer}
-        <!-- «ПО ВРЕМЕНИ»: порция 500 мс каждые tm с (TMR.PRS0.tm) -->
-        <div class="section-card">
-          <Ranges {...everyRange} />
-          <div class="section-card__instr section-card__note"><p>{$t('settings.oil.every.hint')}</p></div>
-        </div>
-        {:else}
+        {#if !timer}
         <!-- ! Макс. скорость (ODO.SMR.max) — у АСФАЛЬТА одометра: выше неё порции
              откладываются до снижения скорости. В «ПО ВРЕМЕНИ» скорость неизвестна. -->
         <div class="section-card">
@@ -146,27 +145,6 @@
       odometer.smart.maxsp = e
       pending.trip.set('smart', odometer.smart)
       store.dispatch('sendDistance', odometer)
-    }
-  }
-
-  // «Порция каждые tm с» — время АСФАЛЬТА таймера, presets[0].time (10…600 с).
-  $: every = Number(timerCfg.presets?.[0]?.time) || 120
-  $: everyRange = {
-    title: $t('settings.oil.every'),
-    value: every,
-    name_value: $t('all.seconds').trim(),
-    minValue: 10,
-    maxValue: 600,
-    stepValue: 10,
-    // Подписи: 10…600 через 5 делений, округлены до 10 с (10, 130, 250, 360, 480, 600).
-    scale: true,
-    scaleStep: 5,
-    scaleSubSteps: 2,
-    frmtScaleLabel: (v) => Math.round(v / 10) * 10,
-    icon: 'icon-clock',
-    rangeChange: (e) => {
-      if (e !== every)
-        store.dispatch('sendDose', { timer: true, time: e })
     }
   }
 
