@@ -8,6 +8,7 @@
 
 {#snippet serviceSubtitle()}
   <div class="home-list-item__subtitle-text home-list-item__subtitle-text_color">FW: {ver.fw}   HW: {ver.hw}</div>
+  <div class="home-list-item__subtitle-text home-list-item__subtitle-text_color">WEB: {WEB_BUILD}</div>
 {/snippet}
 
 {#snippet serviceText()}
@@ -73,6 +74,7 @@
     useStore
   } from 'framework7-svelte';
   import {t} from '../services/i18n.js';
+  import {WEB_BUILD} from '../js/webbuild.js';
 
   let connected = useStore('connected', (value) => connected = value);
   $: ver = useStore('ver', (value) => ver = value);

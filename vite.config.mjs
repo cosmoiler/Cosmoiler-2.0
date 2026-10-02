@@ -2,6 +2,15 @@ import { defineConfig } from 'vite';
 import { svelte } from '@sveltejs/vite-plugin-svelte';
 import compression from 'vite-plugin-compression';
 
+// Метка сборки веб-интерфейса: Vite подставляет её вместо __WEB_BUILD__ в
+// исходниках при каждой сборке (define ниже). Показывается на странице «Сервис»
+// строкой «WEB: …», чтобы отличать, какая сборка интерфейса зашита в прошивку.
+function webBuildStamp() {
+  const d = new Date();
+  const p = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+
 /*
  * Сборка веб-интерфейса Cosmoiler (замена build/webpack.config.js + build/build.js).
  *
@@ -57,6 +66,12 @@ export default defineConfig({
           info.name && info.name.endsWith('.css') ? 'app.css' : '[name][extname]',
       },
     },
+  },
+
+  // Метка сборки веб-интерфейса (см. webBuildStamp выше). Vite заменяет
+  // идентификатор __WEB_BUILD__ в исходниках строкой ниже.
+  define: {
+    __WEB_BUILD__: JSON.stringify(webBuildStamp()),
   },
 
   plugins: [

@@ -29,7 +29,7 @@
             <List >
                 <ListItem class="row-tint">
                     <div class="item-cell width-auto flex-shrink-0 list-input__label list-input__label-text_color">{$t('service.system.pumping.text_toggle')}</div>
-                    <div class="item-cell width-auto flex-shrink-4"><Toggle bind:checked={ctrlpump}  /></div>
+                    <div class="item-cell width-auto flex-shrink-4"><Toggle checked={ctrlpump} onToggleChange={(v) => ctrlpump = v}  /></div>
                 </ListItem>
             </List>
         </div>
@@ -46,7 +46,7 @@
             <List>
                 <ListItem class="row-tint">
                     <div class="item-cell width-auto flex-shrink-0 list-input__label list-input__label-text_color">{$t('settings.oil.refill.empty')}</div>
-                    <div class="item-cell width-auto flex-shrink-4"><Toggle bind:checked={wasEmpty} /></div>
+                    <div class="item-cell width-auto flex-shrink-4"><Toggle checked={wasEmpty} onToggleChange={(v) => wasEmpty = v} /></div>
                 </ListItem>
             </List>
             <!-- Кнопка — в теле карточки, над подвалом с инструкцией. -->
@@ -79,7 +79,7 @@
                   {:else}
                     <div class="item-cell width-auto flex-shrink-0 list-input__label list-input__label-text_color">{$t('service.system.onoff.text_toggle2')}</div>
                   {/if}
-                    <div class="item-cell width-auto flex-shrink-4"><Toggle bind:checked={AItraining} bind:disabled={disabled}  /></div>
+                    <div class="item-cell width-auto flex-shrink-4"><Toggle checked={AItraining} disabled={disabled} onToggleChange={(v) => AItraining = v}  /></div>
                 </ListItem>
             </List>
             <SectionInstr>
@@ -99,7 +99,7 @@
             <List >
                 <ListItem class="row-tint">
                     <div class="item-cell width-auto flex-shrink-0 list-input__label list-input__label-text_color">{$t('service.system.fakegps.text_toggle')}</div>
-                    <div class="item-cell width-auto flex-shrink-4"><Toggle bind:checked={tmpSystem.fake}  /></div>
+                    <div class="item-cell width-auto flex-shrink-4"><Toggle checked={tmpSystem.fake} onToggleChange={(v) => tmpSystem.fake = v}  /></div>
                 </ListItem>
             </List>
             <SectionInstr>
@@ -171,17 +171,17 @@
 
     //let fakegps = false;
 
-    // ! Длительность импульса прокачки — по типу насоса PMP.type (поле type
-    //   ответа /settings/pump), а не по первой букве ver.hw: там версия платы
-    //   («13.5B»), и для неё Tdpms оставалось 0 — при прокачке насос не
-    //   включался. Мембранному насосу (C) — 3 с, остальным — 1 с.
-    let Tdpms = 1000
-    $: Tdpms = (pump && pump.type && pump.type[0] == 'C') ? 3000 : 1000
-
-
+    // ! Параметры прокачки — по типу насоса PMP.type (поле type ответа
+    //   /settings/pump), а не по версии платы. Мембранный насос (C) — короткие
+    //   импульсы 5 с вкл / 1 с пауза. Остальные (B — перистальтический и др.) —
+    //   непрерывно: dpdp = 0 даёт фазу OFF ~1 тик, насос практически не
+    //   останавливается; выключает его страховка прошивки
+    //   CONFIG_COSMOILER_PUMP_CTRL_MAX_MS (10 минут). Тумблер веб сбрасывается
+    //   тем же интервалом.
     $: if (!connected) document.location.reload()
     $: {
-      const pumpParams = {dpms: Tdpms, dpdp: 1000}
+      const membrane = pump && pump.type && pump.type[0] == 'C';
+      const pumpParams = membrane ? {dpms: 5000, dpdp: 1000} : {dpms: 60000, dpdp: 0};
       if (ctrlpump) {
         // ! Команду насоса — только после ответа на /state/pumping: прошивка
         // выполняет её лишь в режиме прокачки, а два запроса подряд могут
@@ -190,7 +190,7 @@
           .then(() => store.dispatch('ctrlPump', [true, 0, pumpParams]))
         setTimeout(() => {
             ctrlpump = false
-        }, 180000)
+        }, 600000)
       }
       else {
         // Выключение: насос прошивка останавливает и сама при выходе из
