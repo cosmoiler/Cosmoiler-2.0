@@ -32,6 +32,7 @@
     "home.setting.time": "{p} сек",
     "home.setting.timer": "Таймер: {p} сек",
     "home.setting.dose": "П: {p}",
+    "home.timer.pulses": "На входе нейтрали — импульсы датчика скорости. Отключите датчик для корректной работы режима ТАЙМЕР",
 
     "menu.ctrl": "Прокачка",
     "menu.system": "Система",

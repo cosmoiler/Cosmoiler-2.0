@@ -144,6 +144,15 @@
   background-color: var(--theme-bg-color-light);
 }
 /*
+ * Предупреждение на главной: в режиме ТАЙМЕР на входе нейтрали (SPEED_IN)
+ * обнаружены импульсы датчика скорости — нейтраль не работает, пока датчик не
+ * отключён (прошивка отдаёт params[4].pls, docs/cosmoiler.md).
+ */
+.home-warning {
+  color: var(--state-warn-color);
+  font-weight: 500;
+}
+/*
  * ! Строка значков режима (доза, оффроуд, остаток / пресеты) — в .item-text.
  * Framework7 режет .item-text до двух строк текста (overflow: hidden,
  * max-height, -webkit-line-clamp), а значки 20px с отступом сверху в эту

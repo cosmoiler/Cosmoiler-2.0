@@ -32,6 +32,7 @@
     "home.setting.time": "{p} s",
     "home.setting.timer": "Timer: {p} s",
     "home.setting.dose": "D: {p}",
+    "home.timer.pulses": "Speed sensor pulses on neutral input. Disconnect the sensor for correct TIMER mode operation",
 
     "menu.ctrl": "Priming",
     "menu.system": "System",

@@ -70,6 +70,11 @@
     </div>
   {:else}
     <div in:fade={{ delay: 300, duration: 300 }} out:fly={{ duration: 300 }}>
+      {#if timerPulsesWarn}
+        <Block strong class="home-warning">
+          <span>{$t('home.timer.pulses')}</span>
+        </Block>
+      {/if}
       <List mediaList>
           <ModeItem {...items[0]} />
           <ModeItem {...items[1]} />
@@ -83,6 +88,7 @@
   import {
     Page,
     Navbar,
+    Block,
     BlockTitle,
     List,
     ListItem,
@@ -132,6 +138,12 @@
       fmodeOdometer = (mode.m === 1) ? true : false
       fmodeTimer = (mode.m === 2) ? true : false
   }
+
+  // В режиме ТАЙМЕР на входе нейтрали (SPEED_IN) обнаружены импульсы датчика
+  // скорости — предупредить: нейтраль не работает, пока датчик не отключён
+  // (прошивка отдаёт params[4].pls, docs/cosmoiler.md).
+  $: timerPulsesWarn = connected && mode.m === 2 &&
+      !!(telemetry && telemetry.params && telemetry.params[4] && telemetry.params[4].pls)
 
   $: items = [
     /**
