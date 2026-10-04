@@ -195,16 +195,36 @@ function deviceRequest(path, options) {
   return request('http://' + uri() + path, Object.assign({
     timeout: COMMAND_TIMEOUT_MS,
   }, options)).then((response) => {
-    markOk();
+    if (fromDevice(response)) markOk();
     return response;
   });
 }
 
-/** Разовая проверка связи (перед загрузкой настроек). */
+/**
+ * ! Ответ именно от блока, а не от чужого узла.
+ *
+ * Адрес блока по умолчанию «публичный» (194.168.4.1, firmware WiFiKconfig.hpp).
+ * Выключили блок — телефон теряет его Wi-Fi и уходит в мобильный интернет, и
+ * запрос на этот адрес уходит туда же: ответить может посторонний узел или
+ * прокси оператора (HTML, коды 403/502…). Раньше любой ответ продлевал связь —
+ * интерфейс «находил» блок, закрывал страницы и перечитывал настройки, хотя
+ * блока нет. Блок на любой запрос API отвечает JSON (kMimeJson в WebBsp.cpp,
+ * в том числе {"status":false} при отказе) — по нему и отличаем.
+ */
+function fromDevice(response) {
+  const type = response && response.headers && response.headers.get('Content-Type');
+  return !!type && type.indexOf('json') !== -1;
+}
+
+/** Ответ блока на /ping — {"status":true}; что угодно другое — блока нет. */
+function pingOk(response) {
+  return fromDevice(response) && statusOk(response);
+}
+
+/** Разовая проверка связи. */
 const checkOnlineStatus = async () => {
   try {
-    await deviceRequest('/ping', { timeout: PROBE_TIMEOUT_MS });
-    return true;
+    return pingOk(await deviceRequest('/ping', { timeout: PROBE_TIMEOUT_MS }));
   } catch (err) {
     return false;
   }
@@ -231,7 +251,69 @@ function probeOnce() {
     probeFailures += 1;
     log("PROBE FAIL #%d: %d ms", probeFailures, Date.now() - t0);
   };
-  deviceRequest('/ping', { timeout: PROBE_TIMEOUT_MS }).then(ok, fail);
+  // Ответ не от блока (см. fromDevice) — такая же неудача, как таймаут.
+  deviceRequest('/ping', { timeout: PROBE_TIMEOUT_MS })
+    .then((response) => (pingOk(response) ? ok() : fail()), fail);
+}
+
+/**
+ * ! Появление связи: подписчики и перечитывание настроек.
+ *
+ * Настройки грузятся НЕ из init, а при каждом переходе «нет связи → есть»:
+ * первый раз — после первого успешного /ping сторожа, затем — после каждого
+ * восстановления связи. Раньше при потере связи страницы делали
+ * location.reload(), и блок заново отдавал все файлы интерфейса.
+ * Подписчик (app.svelte) при reconnect закрывает вложенные страницы вкладок
+ * (tabReset.js closeAllToRoot) — блок после отключения клиента и так в Auto.
+ */
+const linkUpListeners = [];
+/** Связь уже была хотя бы раз — следующее появление считается восстановлением. */
+let everUp = false;
+/** Обработчики появления связи (их и loadSettings) — после события load. */
+let onLinkUpHook = null;
+
+/**
+ * Подписаться на появление связи с блоком.
+ * @param {function({reconnect: boolean})} cb — reconnect: связь уже была раньше.
+ */
+export function onLinkUp(cb) {
+  linkUpListeners.push(cb);
+}
+
+/**
+ * Выполнить fn, когда страница догрузилась (событие load). До него браузер
+ * качает index.html, app.css, app.js, шрифт и иконку — до шести соединений,
+ * ровно предел httpd на блоке (max_open_sockets = 6); запросы настроек
+ * вдобавок попали бы под lru_purge_enable и мешали загрузке страницы.
+ */
+function whenLoaded(fn) {
+  if (document.readyState === 'complete') fn();
+  else window.addEventListener('load', fn, { once: true });
+}
+
+/**
+ * ! Тревога «нет связи» — красный навбар с надписью вместо заголовка (просьба
+ * пользователя 05.10.2026, вместо плашки на страницах). Класс link-down на
+ * <html> и текст в CSS-переменной --link-down-text (стили — app.less). Без
+ * отсрочки навбар мигал бы красным при каждом открытии интерфейса, пока не
+ * пришёл первый ответ /ping: поэтому до первой связи — только если блок не
+ * ответил за STARTUP_GRACE_MS.
+ */
+const STARTUP_GRACE_MS = 3000;
+const startedAt = Date.now();
+let linkAlarm = false;
+
+function updateLinkAlarm() {
+  const on = linkDown && (everUp || Date.now() - startedAt > STARTUP_GRACE_MS);
+  if (on === linkAlarm) return;
+  linkAlarm = on;
+  const root = document.documentElement;
+  // Строка CSS — в кавычках; JSON.stringify экранирует их внутри текста.
+  if (on) root.style.setProperty('--link-down-text', JSON.stringify(tr('navbar.nolink')));
+  // Заголовок навбара не подменяется, а прячется (visibility), надпись — слой
+  // поверх (app.less): ширина заголовка не меняется, центрирование F7 (из JS,
+  // по ширине текста) остаётся верным без пересчёта.
+  root.classList.toggle('link-down', on);
 }
 
 /** Единственное место, где меняется state.connect. */
@@ -242,6 +324,16 @@ function setLink(state, down) {
   linkDown = down;
   state.connect = !down;
   log("CONNECT: ", !down);
+  if (!down) {
+    const reconnect = everUp;
+    everUp = true;
+    whenLoaded(() => {
+      linkUpListeners.forEach((cb) => {
+        try { cb({ reconnect }); } catch (err) { log('onLinkUp: %o', err); }
+      });
+      if (onLinkUpHook) onLinkUpHook();
+    });
+  }
 }
 
 /** Тик сторожа: только чтение счётчиков (+ зонд, если давно нет трафика). */
@@ -258,6 +350,7 @@ function watchdogTick(state) {
   // после каждого ответа) и держит время в TIME_WAIT.
   if (silent > idle && !document.hidden && navigator.onLine !== false) probeOnce();
   setLink(state, down);
+  updateLinkAlarm();
 }
 
 function startWatchdog(state) {
@@ -269,7 +362,11 @@ function startWatchdog(state) {
   if (FORCE_CONNECTED) {
     log("DEBUG: FORCE_CONNECTED — связь с устройством объявлена постоянной (import.meta.env.DEV)");
     linkDown = false;
+    everUp = true;
     state.connect = true;
+    // Перехода «нет связи → есть» в dev не бывает — настройки грузим один раз
+    // (блок по ?ws= может и ответить; без него запросы просто не пройдут).
+    whenLoaded(() => { if (onLinkUpHook) onLinkUpHook(); });
     return;
   }
 
@@ -279,6 +376,7 @@ function startWatchdog(state) {
     lastOkAt = 0;
     probeFailures = LINK_LOST_AFTER;
     setLink(state, true);
+    updateLinkAlarm();
   });
   // «online» НЕ означает, что устройство снова доступно, поэтому связь не
   // объявляем восстановленной, а лишь сразу шлём зонд.
@@ -324,6 +422,34 @@ function deferSend(key, fn, delay = 2000) {
   clearTimeout(sendTimers[key]);
   sendTimers[key] = setTimeout(fn, delay);
 }
+
+/**
+ * ! Не больше limit запросов к блоку одновременно.
+ *
+ * httpd на блоке обслуживает все сессии одной задачей (max_open_sockets = 6,
+ * lru_purge_enable): десяток запросов настроек разом, как было при старте,
+ * вытеснял соединения друг друга и тормозил ответы.
+ *
+ * @param {Array<function(): Promise>} tasks — запросы, по одному на функцию.
+ * @param {number} [limit=2]
+ * @returns {Promise<void>} — когда завершились все (ошибки не прерывают остальных).
+ */
+function runLimited(tasks, limit = 2) {
+  let next = 0;
+  const worker = async () => {
+    while (next < tasks.length) {
+      const task = tasks[next++];
+      try { await task(); } catch (err) { /* связь отслеживает сторож */ }
+    }
+  };
+  return Promise.all(Array.from({ length: Math.min(limit, tasks.length) }, worker)).then(() => {});
+}
+
+/** Период опроса /telemetry/get — пауза ПОСЛЕ ответа, а не интервал запуска. */
+const TELEMETRY_PERIOD_MS = 500;
+/** Номер текущей цепочки опроса: старая цепочка, увидев другой номер, гаснет. */
+let telemetryGen = 0;
+let telemetryTimer = 0;
 
 /**
  * Заводские параметры классификатора «трасса / город» — те же числа, что
@@ -443,7 +569,6 @@ function statusOk(response) {
 
 const store = createStore({
   state: {
-    telemetryInterval: 0,
     connect: false,
    // trigg_connect: false; // триггер изменения статуса подключения
     locale: (navigator.userLanguage || navigator.language || navigator.systemLanguage),
@@ -630,67 +755,51 @@ const store = createStore({
       // Запросы в интернет за прошивкой идут с timeout: 0 (см. diag.svelte) —
       // иначе большой файл не успеет скачаться.
 
+      // ! Настройки грузятся при появлении связи (setLink → onLinkUpHook), а не
+      //   здесь: первая связь — первый успешный /ping сторожа, дальше — каждое
+      //   восстановление связи. Хук ставится ДО сторожа: в dev (FORCE_CONNECTED)
+      //   сторож вызывает его сразу.
+      onLinkUpHook = () => store.dispatch('loadSettings');
+
       // Вместо «пинга по расписанию» — сторож времени последнего успешного
       // ответа (см. блок «Контроль связи» выше). Он сам решает, когда нужен зонд.
       startWatchdog(state);
-
-      /**
-       * Начальная загрузка настроек с устройства.
-       *
-       * Вынесено в функцию, потому что полагаться на событие load на window
-       * нельзя: init() вызывается из f7ready() внутри onMount, и если к этому
-       * моменту страница успела догрузиться (кеш браузера, быстрый старт,
-       * повторное открытие вкладки), событие load уже прошло — подписка на него
-       * не сработала бы НИКОГДА и настройки не загрузились бы вовсе.
-       */
-      async function loadInitialSettings() {
-        //const statusDisplay = document.getElementById("status");
-        const online = await checkOnlineStatus()
-        if (online) {
-          deviceRequest('/settings/mode').then((response) => { state.mode = JSON.parse(response.data) });
-          deviceRequest('/settings/trip').then((response) => { state.odometer = JSON.parse(response.data) });
-          deviceRequest('/settings/time').then((response) => applyTimer(state, JSON.parse(response.data)));
-          deviceRequest('/settings/manual').then((response) => { state.manual = JSON.parse(response.data) });
-          deviceRequest('/settings/pump').then((response) => { state.pump = JSON.parse(response.data) });
-          // Прошивка до 27.09.2026 секции масла не знает — остаются умолчания.
-          deviceRequest('/settings/oil')
-            .then((response) => { state.oil = { ...JSON.parse(response.data), supported: true } })
-            .catch(() => {});
-          deviceRequest('/settings/system').then((response) => {
-            state.system = JSON.parse(response.data)
-            if (ToBoolean(state.system.gps) == false)
-              state.odometer.sensor.gnss = false
-          });
-          requestVer(state);
-          deviceRequest('/telemetry/get')
-            .then((response)=> {
-              state.telemetry = JSON.parse(response.data)
-            })
-            .catch((err) => { /* state.connect = false */ })
-        }
-        log("ONLINE = ", online)
-      }
-
-      // Ждать load всё же стоит: браузер грузит index.html, app.css, app.js,
-      // шрифт и иконку — это до шести параллельных соединений, ровно предел
-      // httpd на устройстве (max_open_sockets = 6). Ещё семь запросов настроек
-      // вдобавок к этому попали бы под lru_purge_enable и могли помешать
-      // загрузке страницы.
-      //
-      // document.readyState === 'complete' — это и есть «load уже отгремел».
-      if (document.readyState === 'complete') {
-        loadInitialSettings();
-      } else {
-        window.addEventListener("load", loadInitialSettings);
-      }
     },
 
-    async getMode({state}) {
-        const online = await checkOnlineStatus();
-        if (online) {
-          deviceRequest('/settings/mode')
-            .then((response) => { state.mode = JSON.parse(response.data) })
-        }
+    /**
+     * Перечитать настройки с блока — не больше двух запросов одновременно
+     * (runLimited). Вызывается при появлении связи и обновлением жестом на
+     * «Главной». Раздел, у которого есть неотправленные правки (очередь
+     * state.pending), не перечитывается: правки новее, а GET затёр бы их до
+     * отложенного POST.
+     * @returns {Promise<void>} — когда завершились все запросы.
+     */
+    loadSettings({state}) {
+      const get = (path, apply) => () =>
+        deviceRequest(path).then((response) => apply(JSON.parse(response.data)));
+      const tasks = [
+        get('/settings/mode', (mode) => { state.mode = mode }),
+        get('/telemetry/get', (telemetry) => { state.telemetry = telemetry }),
+      ];
+      if (state.pending.trip.size === 0)
+        tasks.push(get('/settings/trip', (odometer) => { state.odometer = odometer }));
+      if (state.pending.time.size === 0)
+        tasks.push(get('/settings/time', (timer) => applyTimer(state, timer)));
+      tasks.push(
+        get('/settings/manual', (manual) => { state.manual = manual }),
+        get('/settings/pump', (pump) => { state.pump = pump }),
+        // Прошивка до 27.09.2026 секции масла не знает — остаются умолчания.
+        get('/settings/oil', (oil) => { state.oil = { ...oil, supported: true } }),
+      );
+      if (state.pending.system.size === 0)
+        tasks.push(get('/settings/system', (system) => {
+          state.system = system
+          if (ToBoolean(state.system.gps) == false)
+            state.odometer.sensor.gnss = false
+        }));
+      tasks.push(() => requestVer(state));
+      log('loadSettings: %d запросов', tasks.length);
+      return runLimited(tasks, 2);
     },
 
     async getServiceInfo({state}) {
@@ -713,12 +822,10 @@ const store = createStore({
     },
 
     requestTelemetryStart({state}) {
-      // Идемпотентно. Раньше при повторном pageTabShow создавался ЕЩЁ один
-      // интервал, а ссылка на предыдущий терялась (перезапись без
-      // clearInterval) — опрос начинал идти несколькими циклами сразу, и
-      // остановить их requestTelemetryStop уже не мог.
-      clearInterval(state.telemetryInterval);
-      state.telemetryInterval = 0;
+      // Идемпотентно: новый номер цепочки гасит прежнюю (её ответ, придя
+      // позже, уже не запланирует следующий запрос).
+      clearTimeout(telemetryTimer);
+      const gen = ++telemetryGen;
 
       // Без предварительного checkOnlineStatus() (GET /ping): в цикле ниже он
       // выполнялся перед КАЖДЫМ опросом, то есть на 500 мс уходило 2 запроса
@@ -732,29 +839,33 @@ const store = createStore({
       // сразу отвечает true и ничего не меняет (firmware/main/HAL/WebBsp.cpp,
       // Route::TelemetryStart: «Отдельный сеанс телеметрии не нужен: страница
       // опрашивает /telemetry/get сама»).
-      deviceRequest('/telemetry/get')
-        .then((response) => {
-          state.telemetry = JSON.parse(response.data)
-        })
-        .catch((err) => {
-          /* связь отслеживает сторож по lastOkAt */
-        })
-
-      state.telemetryInterval = setInterval(() => {
+      //
+      // ! Цепочка setTimeout, а не setInterval: следующий запрос уходит через
+      //   TELEMETRY_PERIOD_MS ПОСЛЕ ответа (или ошибки). С setInterval при
+      //   медленном ответе блока запросы накладывались друг на друга.
+      const schedule = () => {
+        if (gen !== telemetryGen) return;
+        telemetryTimer = setTimeout(tick, TELEMETRY_PERIOD_MS);
+      };
+      const tick = () => {
+        if (gen !== telemetryGen) return;
         // В скрытой вкладке опрос не нужен: реагировать некому, а устройство
         // обслуживает запросы одной задачей — лишний трафик только мешает.
-        if (document.hidden) return;
+        if (document.hidden) { schedule(); return; }
         deviceRequest('/telemetry/get')
           .then((response) => {
-            state.telemetry = JSON.parse(response.data)
+            if (gen === telemetryGen) state.telemetry = JSON.parse(response.data)
           })
           .catch((err) => { /* связь отслеживает сторож по lastOkAt */ })
-      }, 500)
+          .finally(schedule)
+      };
+      tick();
     },
 
     requestTelemetryStop({state}) {
-      clearInterval(state.telemetryInterval);
-      state.telemetryInterval = 0;
+      clearTimeout(telemetryTimer);
+      telemetryTimer = 0;
+      telemetryGen++;
       // GET /telemetry/stop — тоже заглушка на устройстве: отдельного сеанса
       // телеметрии нет (см. комментарий в requestTelemetryStart), поэтому
       // запрос не отправляется.
@@ -973,10 +1084,13 @@ const store = createStore({
     },
 
     ctrlBright({state}, data) {
-      deviceRequest('/settings/bright?v='+ data, { method: 'POST' })
-        .catch(() => {
-          commandFailed(tr('error.nolink'))
-        })
+      // Шаги ползунка — одним запросом после остановки (150 мс), а не каждый.
+      deferSend('bright', () => {
+        deviceRequest('/settings/bright?v='+ data, { method: 'POST' })
+          .catch(() => {
+            commandFailed(tr('error.nolink'))
+          })
+      }, 150)
     },
 
     fakeGPS({state}, data) {

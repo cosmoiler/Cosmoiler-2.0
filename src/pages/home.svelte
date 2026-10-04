@@ -48,10 +48,9 @@
   <!-- Top Navbar -->
   <Navbar title={navbarTitle} />
 
+  <!-- Без связи — красный навбар с надписью (store.js updateLinkAlarm, app.less). -->
   {#if connected}
     <BlockTitle style='background-color: var( --f7-theme-color-bg-color)'>{$t('home.selectmode')}</BlockTitle>
-  {:else}
-    <BlockTitle class={`block-title-noconnection__text`} >{$t('home.noconnect')}</BlockTitle>
   {/if}
 
   {#if !connected}
@@ -207,14 +206,12 @@
           store.dispatch('sendMode', tmpMode)
       }
     }
-    $: {
-      if (connected) store.dispatch('getMode')
-    }
-  function loadMore(e, done) {
-    document.location.reload()
-    setTimeout(() => {
-      f7.ptr.done()
-    }, 2000)
+  // ! Обновление жестом — перечитать настройки (по 2 запроса, store.js
+  //   loadSettings), а не перезагружать страницу: reload() заставлял блок заново
+  //   отдавать все файлы интерфейса. Режим (/settings/mode) тоже читается там —
+  //   отдельный getMode при появлении связи убран (этап 2).
+  function loadMore() {
+    store.dispatch('loadSettings').finally(() => f7.ptr.done())
   }
 
 </script>

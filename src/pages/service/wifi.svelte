@@ -82,7 +82,9 @@
     let system = useStore('system', (value) => system = value);
     let pending = useStore('pending', (value) => pending = value);
 
-    $: if (!connected) document.location.reload()
+    // ! Без location.reload при потере связи (этап 2, firmware docs/web-frontend.md §13):
+    //   без связи — надпись «Нет связи», как раньше; после восстановления вкладки
+    //   возвращаются к началу и настройки перечитываются (store.js onLinkUp).
 
     function pageAfteOut() {
       pending.system.set("ap", system.ap)

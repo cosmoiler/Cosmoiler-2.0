@@ -14,6 +14,7 @@
     "home.selectmode": "Choose operation mode",
     "home.connect": "Connecting...",
     "home.noconnect": "There is no connection with the control unit!",
+    "navbar.nolink": "No connection",
     "error.command": "Command failed!",
     "error.nolink": "No connection with the control unit. Command failed.",
     "home.telemetry": "Telemetry",

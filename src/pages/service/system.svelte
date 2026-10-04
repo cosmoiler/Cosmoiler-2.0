@@ -29,7 +29,7 @@
             <List >
                 <ListItem class="row-tint">
                     <div class="item-cell width-auto flex-shrink-0 list-input__label list-input__label-text_color">{$t('service.system.pumping.text_toggle')}</div>
-                    <div class="item-cell width-auto flex-shrink-4"><Toggle checked={ctrlpump} onToggleChange={(v) => ctrlpump = v}  /></div>
+                    <div class="item-cell width-auto flex-shrink-4"><Toggle checked={ctrlpump} onToggleChange={setPumping}  /></div>
                 </ListItem>
             </List>
         </div>
@@ -79,7 +79,7 @@
                   {:else}
                     <div class="item-cell width-auto flex-shrink-0 list-input__label list-input__label-text_color">{$t('service.system.onoff.text_toggle2')}</div>
                   {/if}
-                    <div class="item-cell width-auto flex-shrink-4"><Toggle checked={AItraining} disabled={disabled} onToggleChange={(v) => AItraining = v}  /></div>
+                    <div class="item-cell width-auto flex-shrink-4"><Toggle checked={AItraining} disabled={disabled} onToggleChange={setTraining}  /></div>
                 </ListItem>
             </List>
             <SectionInstr>
@@ -99,7 +99,7 @@
             <List >
                 <ListItem class="row-tint">
                     <div class="item-cell width-auto flex-shrink-0 list-input__label list-input__label-text_color">{$t('service.system.fakegps.text_toggle')}</div>
-                    <div class="item-cell width-auto flex-shrink-4"><Toggle checked={tmpSystem.fake} onToggleChange={(v) => tmpSystem.fake = v}  /></div>
+                    <div class="item-cell width-auto flex-shrink-4"><Toggle checked={tmpSystem.fake} onToggleChange={setFakeGps}  /></div>
                 </ListItem>
             </List>
             <SectionInstr>
@@ -171,36 +171,62 @@
 
     //let fakegps = false;
 
+    // ! Без location.reload при потере связи (этап 2, firmware docs/web-frontend.md §13):
+    //   без связи — надпись «Нет связи», как раньше; после восстановления вкладки
+    //   возвращаются к началу и настройки перечитываются (store.js onLinkUp).
+    // Копия — тот же объект стора; после перечитывания настроек — новый объект.
+    $: tmpSystem = system
+
+    // ! Команды блоку — только из обработчиков тумблеров, не из `$:`. Раньше
+    //   реактивный блок прокачки при каждом открытии страницы (и при каждом
+    //   обновлении pump) слал ctrlPump false + /state/auto, а `$: fakeGPS` — на
+    //   каждый шаг яркости: блок зависел от всего tmpSystem.
+
+    // Страховка веба: тумблер прокачки выключается через 10 минут, как и насос
+    // в прошивке (CONFIG_COSMOILER_PUMP_CTRL_MAX_MS).
+    const PUMPING_MAX_MS = 600000
+    let pumpingTimer = 0
+
     // ! Параметры прокачки — по типу насоса PMP.type (поле type ответа
     //   /settings/pump), а не по версии платы. Мембранный насос (C) — короткие
     //   импульсы 5 с вкл / 1 с пауза. Остальные (B — перистальтический и др.) —
     //   непрерывно: dpdp = 0 даёт фазу OFF ~1 тик, насос практически не
-    //   останавливается; выключает его страховка прошивки
-    //   CONFIG_COSMOILER_PUMP_CTRL_MAX_MS (10 минут). Тумблер веб сбрасывается
-    //   тем же интервалом.
-    $: if (!connected) document.location.reload()
-    $: {
+    //   останавливается; выключает его страховка прошивки (10 минут).
+    function pumpingParams() {
       const membrane = pump && pump.type && pump.type[0] == 'C';
-      const pumpParams = membrane ? {dpms: 5000, dpdp: 1000} : {dpms: 60000, dpdp: 0};
-      if (ctrlpump) {
+      return membrane ? {dpms: 5000, dpdp: 1000} : {dpms: 60000, dpdp: 0};
+    }
+
+    function setPumping(on) {
+      if (on === ctrlpump) return
+      ctrlpump = on
+      clearTimeout(pumpingTimer)
+      if (on) {
         // ! Команду насоса — только после ответа на /state/pumping: прошивка
         // выполняет её лишь в режиме прокачки, а два запроса подряд могут
         // прийти в любом порядке (docs/modes.md, решение 11).
         store.dispatch('modeWork', store.state.OILER_PUMPING)
-          .then(() => store.dispatch('ctrlPump', [true, 0, pumpParams]))
-        setTimeout(() => {
-            ctrlpump = false
-        }, 600000)
-      }
-      else {
+          .then(() => store.dispatch('ctrlPump', [true, 0, pumpingParams()]))
+        pumpingTimer = setTimeout(() => setPumping(false), PUMPING_MAX_MS)
+      } else {
         // Выключение: насос прошивка останавливает и сама при выходе из
         // прокачки, поэтому порядок этих двух запросов не важен.
-        store.dispatch('ctrlPump', [false, 0, pumpParams])
+        store.dispatch('ctrlPump', [false, 0, pumpingParams()])
         store.dispatch('modeWork', store.state.OILER_AUTO)
       }
     }
 
-    $: store.dispatch('fakeGPS', tmpSystem.fake)
+    function setFakeGps(on) {
+      tmpSystem.fake = on
+      store.dispatch('fakeGPS', on)
+    }
+
+    // Обучение завершается перезагрузкой блока (docs/modes.md, решение 1) —
+    // команда только на включение.
+    function setTraining(on) {
+      AItraining = on
+      if (on) store.dispatch('modeWork', store.state.OILER_TRAINING)
+    }
 
     $: rangeValues = [
       [{
@@ -221,7 +247,6 @@
       }],
     ]
 
-    $: if (AItraining) store.dispatch('modeWork', store.state.OILER_TRAINING)
     $: disabled = AItraining || ctrlpump
 
     function pageBeforeIn() {
@@ -230,6 +255,9 @@
     }
 
     function pageAfteOut() {
+      // Прокачка гаснет вместе со страницей: /state/auto ниже выводит блок из неё.
+      clearTimeout(pumpingTimer)
+      ctrlpump = false
       /* включить автоматический режим работы смазчика */
       store.dispatch('modeWork', store.state.OILER_AUTO)
       pending.system.set("bright", tmpSystem.bright)

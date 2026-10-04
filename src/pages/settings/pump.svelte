@@ -31,7 +31,7 @@
               checked={fStd}
               onChange={() => {
                 tmpPump.usr = false
-                store.dispatch('sendPump', tmpPump);
+                applyPump();
               }}
               class={`sensor__list-item`}>
             </ListItem>
@@ -43,7 +43,7 @@
               checked={fUsr}
               onChange={() => {
                 tmpPump.usr = true
-                store.dispatch('sendPump', tmpPump);
+                applyPump();
               }}
               class={`sensor__list-item`}>
             </ListItem>
@@ -153,7 +153,11 @@
     let is_tad17// = false
     const maxProcentT = 98
 
-    $: if (!connected) document.location.reload()
+    // ! Без location.reload при потере связи (этап 2, firmware docs/web-frontend.md §13):
+    //   без связи — надпись «Нет связи», как раньше; после восстановления вкладки
+    //   возвращаются к началу и настройки перечитываются (store.js onLinkUp).
+    // Копия — тот же объект стора; после перечитывания настроек — новый объект.
+    $: tmpPump = pump
 
     $: fStd = (!tmpPump.usr)? true : false
     $: fUsr = (tmpPump.usr)? true : false
@@ -189,7 +193,7 @@
         rangeChange: (e)=>{
           if (e == 0) e = 1;
           tmpPump.dpms = T * e/100;
-          store.dispatch('sendPump', tmpPump);
+          applyPump();
         },
         // ! Тумблер строкой НАД шкалой (подпись «Управление насосом»), а не справа.
         toggleLabel: $t('settings.pump.control'),
@@ -200,6 +204,7 @@
         onCtrlToggle: (checked) => {
           log(checked)
           fToggle = checked
+          sendCtrl()
         }
       },
       {
@@ -215,7 +220,7 @@
         rangeChange: (e)=>{
           if (e == 0) e = 1;
           tmpPump.dpms = T * e/100;
-          store.dispatch('sendPump', tmpPump);
+          applyPump();
         },
         // ! Тумблер строкой НАД шкалой (подпись «Управление насосом»), а не справа.
         toggleLabel: $t('settings.pump.control'),
@@ -224,6 +229,7 @@
         onCtrlToggle: (checked) => {
           log(checked)
           fToggle = checked
+          sendCtrl()
         }
       },],
       [{
@@ -241,7 +247,7 @@
         rangeChange: (e)=>{
           if (e == 0) e = 10;
           tmpPump.dpms = e;
-          store.dispatch('sendPump', tmpPump);
+          applyPump();
         },
         // ! Тумблер строкой НАД шкалой: в карточке объёма он общий для пары
         //   «время вкл/выкл», поэтому подпись та же, что у шкалы объёма.
@@ -251,6 +257,7 @@
         onCtrlToggle: (checked) => {
           log(checked)
           fToggle = checked
+          sendCtrl()
         }
       },
       {
@@ -267,15 +274,26 @@
         rangeChange: (e)=>{
           if (e == 0) e = 10;
           tmpPump.dpdp = e;
-          store.dispatch('sendPump', tmpPump);
+          applyPump();
         },
       }],
     ]
 
-    let Tdpdp = 2000
-    $: if (tmpPump.usr) Tdpdp = tmpPump.dpdp
-    $: store.dispatch('ctrlPump', [fToggle, 0, {dpms: tmpPump.dpms, dpdp: Tdpdp}])
-    //$: if (!tmpPump.usr) Tdpdp = 2000
+    // ! Команда насоса — только из обработчиков (тумблер, шкалы, тип насоса), не
+    //   из `$:`. Раньше реактивный ctrlPump уходил при каждом открытии страницы и
+    //   на каждый шаг шкалы, даже с выключенным тумблером. Пауза у штатного
+    //   насоса — 2 с, у дополнительного — его dpdp.
+    function sendCtrl() {
+      const dpdp = tmpPump.usr ? tmpPump.dpdp : 2000
+      store.dispatch('ctrlPump', [fToggle, 0, {dpms: tmpPump.dpms, dpdp}])
+    }
+
+    // Сохранить настройки насоса; если насос включён тумблером — перезапустить
+    // его с новыми параметрами.
+    function applyPump() {
+      store.dispatch('sendPump', tmpPump)
+      if (fToggle) sendCtrl()
+    }
 
     function pageBeforeIn() {
       /* включить режим настройки вязкости */

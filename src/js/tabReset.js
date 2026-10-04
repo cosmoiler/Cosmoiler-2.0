@@ -70,6 +70,19 @@ function onTabbarClick(e) {
 }
 
 /**
+ * Вернуть все вкладки к их корню без анимации — после восстановления связи с
+ * блоком (store.js onLinkUp, этап 2, firmware docs/web-frontend.md §13). У
+ * закрываемых страниц срабатывает их выход (сохранение, /state/auto, насос
+ * стоп) — блок после отключения клиента и так вернулся в Auto, страница с ним
+ * не расходится. Заменяет прежний location.reload() при потере связи.
+ */
+export function closeAllToRoot() {
+  document.querySelectorAll('.views.tabs > .view').forEach((el) => {
+    if (el.f7View) closeToRoot(el.f7View.router, false);
+  });
+}
+
+/**
  * Включить закрытие вложенных страниц при смене вкладки. Вызывать один раз,
  * после f7ready.
  * @param f7 — экземпляр приложения Framework7.

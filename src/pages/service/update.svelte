@@ -4,9 +4,6 @@
   pageContent={true}>
 
   <Navbar title={$t('service.update.title')} />
-  {#if !f_connected}
-    <BlockTitle class={`block-title-noconnection__text`} >{$t('home.noconnect')}</BlockTitle>
-  {/if}
   <BlockTitle ><span>{$t('service.update.fw.title2')}</span></BlockTitle>
   <Block strong style="background-color: var(--f7-theme-color-bg-tint-color)">
       <div>

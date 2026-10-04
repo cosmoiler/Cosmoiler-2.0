@@ -7,15 +7,11 @@
   <Navbar title={$t('home.telemetry')} />
   <!-- <Button on:click={() => { store.state.connect =  !store.state.connect}}>Connect = {store.state.connect}</Button> -->
 
-{#if !connected}
-<!--   <div transition:fade="{{delay: 250, duration: 30}}"> -->
-  <div in:fade="{{delay: 50, duration: 300}}" out:fly="{{duration: 300}}">
-    <BlockTitle class={`block-title-noconnection__text`} >{$t('home.noconnect')}</BlockTitle>
-  </div>
-{:else}
+<!-- Без связи — красный навбар с надписью (store.js updateLinkAlarm, app.less). -->
+{#if connected}
 <!--   <CardTelemetry {...dataCardTele[telemetry.params[3].m]}  /> -->
 <div in:fade="{{delay: 50, duration: 300}}" out:fly="{{duration: 300}}">
-    <CardTelemetry {...dataCardTele[md]}  />
+    <CardTelemetry {...card}  />
     <!-- ! Остаток масла в бачке (params[6], firmware docs/oil.md) — во всех режимах.
          Перенесён со страницы «Масло» в настройках (решение пользователя 28.09.2026):
          это показание, а не настройка. У прошивки без учёта масла params[6] нет —
@@ -56,7 +52,6 @@
   import {
     Page,
     Navbar,
-    BlockTitle,
     Card,
     CardHeader,
     CardContent,
@@ -229,8 +224,13 @@
 
 $:  md = indexDataCardTele(odometer, telemetry) // (!telemetry.params[nameParams.GPS].fix && telemetry.params[nameParams.MODE].m == 1) ? 5 : telemetry.params[nameParams.MODE].m
 
-$:  dataCardTele = [
-    { //#0
+// ! Строится только карточка текущего режима (этап 2, firmware docs/web-frontend.md §13):
+//   раньше на каждый ответ телеметрии (2 раза в секунду) собирались все шесть, а
+//   показывалась одна. Параметры названы как переменные компонента — по ним Svelte
+//   пересчитывает карточку при их изменении.
+const buildCard = (md, telemetry, odometer, timer, oil, gnssPresent) => {
+  switch (md) {
+    case 0: return { //#0
       title: $t('telemetry.off.title').toUpperCase(), // 0
       gauge: [],
       icons: [
@@ -241,8 +241,8 @@ $:  dataCardTele = [
           alarm: voltAlarm(voltage(telemetry.params[nameParams.VOLTAGE]))
         }
       ]
-    },
-    { //#1
+    };
+    case 1: return { //#1
       title: $t('telemetry.odo.title').toUpperCase(), // 1
       gauge: [
         {
@@ -275,8 +275,8 @@ $:  dataCardTele = [
           alarm: voltAlarm(voltage(telemetry.params[nameParams.VOLTAGE]))
         }
       ]
-    },
-    { //#2
+    };
+    case 2: return { //#2
       title: $t('telemetry.tmr.title').toUpperCase(), // 2
       gauge: [
         {
@@ -296,8 +296,8 @@ $:  dataCardTele = [
           alarm: voltAlarm(voltage(telemetry.params[nameParams.VOLTAGE]))
         }
       ]
-    },
-    { //#3 — ПРОКАЧКА: сколько раз включался насос и напряжение бортсети
+    };
+    case 3: return { //#3 — ПРОКАЧКА: сколько раз включался насос и напряжение бортсети
       //
       // ! Приборов (gauge) здесь нет намеренно. Оба показателя — одиночные
       // числа, а шкала у счётчика включений насоса бессмысленна: насос
@@ -317,8 +317,8 @@ $:  dataCardTele = [
           alarm: voltAlarm(voltage(telemetry.params[nameParams.VOLTAGE]))
         }
       ]
-    },
-    { //#4 — ОБУЧЕНИЕ: приём спутников и напряжение бортсети
+    };
+    case 4: return { //#4 — ОБУЧЕНИЕ: приём спутников и напряжение бортсети
       //
       // На этой странице важен именно приём ГНСС — по нему видно, есть ли смысл
       // запускать обучение (см. service/system.svelte). Приём показываем только
@@ -334,8 +334,8 @@ $:  dataCardTele = [
           alarm: voltAlarm(voltage(telemetry.params[nameParams.VOLTAGE]))
         }
       ]
-    },
-    { //#5
+    };
+    case 5: return { //#5
       title: $t('telemetry.tmr2.title'), // 5
       gauge: [
         {
@@ -355,9 +355,13 @@ $:  dataCardTele = [
           alarm: voltAlarm(voltage(telemetry.params[nameParams.VOLTAGE])),
         }
       ]
-    },
+    };
 
-]
+    default: return {};
+  }
+}
+
+$:  card = buildCard(md, telemetry, odometer, timer, oil, gnssPresent)
 
 
 /*     $: {

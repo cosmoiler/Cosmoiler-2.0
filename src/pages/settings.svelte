@@ -34,9 +34,8 @@
 
 <Navbar title={$t('home.settings')} />
 
-{#if !connected}
-    <BlockTitle class={`block-title-noconnection__text`} >{$t('home.noconnect')}</BlockTitle>
-{:else}
+<!-- Без связи — красный навбар с надписью (store.js updateLinkAlarm, app.less). -->
+{#if connected}
 
     <Tabs >
       <Tab id="tab-trip" tabActive >
@@ -112,7 +111,6 @@
     Tabs,
     Tab,
     Icon,
-    BlockTitle,
     useStore
   } from 'framework7-svelte';
   import {t} from '../services/i18n.js';

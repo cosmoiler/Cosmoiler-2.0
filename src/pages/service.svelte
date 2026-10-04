@@ -26,9 +26,6 @@
 
   <Navbar title={$t('service.title')} />
 
-  {#if !connected}
-    <BlockTitle class={`block-title-noconnection__text`} >{$t('home.noconnect')}</BlockTitle>
-  {/if}
 
   <!--
     ! Карточка устройства — тот же .section-card, что и на других страницах
@@ -70,7 +67,6 @@
     List,
     ListItem,
     Navbar,
-    BlockTitle,
     useStore
   } from 'framework7-svelte';
   import {t} from '../services/i18n.js';
@@ -82,7 +78,7 @@
   $: items = [
     {link: '/service/wifi/',    title: $t('service.wifi.title'),    view: connected},
     {link: '/service/system/',  title: $t('service.system.title'),  view: connected},
-    {link: '/service/update/',  title: $t('service.update.title'),  view: true},
+    {link: '/service/update/',  title: $t('service.update.title'),  view: connected},
     {link: '/service/diag/',    title: $t('service.diag.title'),    view: true},
     {link: '/service/about/',   title: $t('service.about.title'),   view: true},
   ]

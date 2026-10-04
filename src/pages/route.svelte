@@ -6,9 +6,6 @@
 
     <Navbar title={$t('route.cfg.title')} />
 
-    {#if !connected}
-        <BlockTitle class={`block-title-noconnection__text`}>{$t('home.noconnect')}</BlockTitle>
-    {/if}
 
     <!--
       ! Параметры классификатора «трасса / город» (NVS ODO.SMR.*, прошивка —

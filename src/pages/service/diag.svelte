@@ -14,9 +14,6 @@
     </NavRight>
   </Navbar> -->
 
-  {#if !connected}
-    <BlockTitle class={`block-title-noconnection__text`} >{$t('home.noconnect')}</BlockTitle>
-  {/if}
 
 
 
@@ -126,7 +123,6 @@
     import {
       Page,
       Navbar,
-      BlockTitle,
       Block,
       List,
       ListItem,

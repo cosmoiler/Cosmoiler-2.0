@@ -63,7 +63,11 @@
 
   let tmpOdometer = odometer
 
-  $: if (!connected) document.location.reload()
+  // ! Без location.reload при потере связи (этап 2, firmware docs/web-frontend.md §13):
+  //   без связи — надпись «Нет связи», как раньше; после восстановления вкладки
+  //   возвращаются к началу и настройки перечитываются (store.js onLinkUp).
+  // Копия — тот же объект стора; после перечитывания настроек — новый объект.
+  $: tmpOdometer = odometer
 
   const P = store.state.presets
 

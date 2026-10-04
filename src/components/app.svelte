@@ -12,11 +12,16 @@
   } from 'framework7-svelte';
 
   import routes from '../js/routes';
-  import store from '../js/store';
+  import store, { onLinkUp } from '../js/store';
   import { initBackButton } from '../js/backButton.js';
-  import { initTabReset } from '../js/tabReset.js';
+  import { initTabReset, closeAllToRoot } from '../js/tabReset.js';
   import { initKeepAwake } from '../js/keepAwake.js';
   import Main from '../pages/appview.svelte';
+
+  // Связь с блоком восстановилась — вкладки к началу (выход их страниц), затем
+  // store перечитывает настройки. Вместо прежнего location.reload() (этап 2).
+  // Подписка — до init: первое появление связи не должно пройти мимо.
+  onLinkUp(({reconnect}) => { if (reconnect) closeAllToRoot() })
 
   // Framework7 Parameters
   let f7params = {

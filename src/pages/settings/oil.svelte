@@ -72,8 +72,6 @@
         </div>
       </Tab>
     </Tabs>
-  {:else}
-    <BlockTitle class={`block-title-noconnection__text`}>{$t('home.noconnect')}</BlockTitle>
   {/if}
 </Page>
 
@@ -81,7 +79,6 @@
   import {
     Page,
     Navbar,
-    BlockTitle,
     Toolbar,
     Link,
     Tabs,
