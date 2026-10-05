@@ -658,7 +658,10 @@ const store = createStore({
       ap: {ssid: "Cosmoiler-NNNN", psw: "", pwr: true},
       sta: {ssid: "", psw: ""},
       bright: 255,
-      gps: true,
+      // Наличие модуля ГНСС (из /settings/gnss, см. loadSettings). До загрузки —
+      // «нет»: иначе на плате без модуля значок GPS на «Главной» и вариант GPS на
+      // «Датчике» мелькали до ответа блока. В dev без блока — «есть» (DEV_TELEMETRY).
+      gps: DEV_TELEMETRY,
       fake: false
     },
    /*  pn: { pn: null, ssid: "Cosmoiler_", psw: null }, */
@@ -791,8 +794,16 @@ const store = createStore({
         // Прошивка до 27.09.2026 секции масла не знает — остаются умолчания.
         get('/settings/oil', (oil) => { state.oil = { ...oil, supported: true } }),
       );
+      // ! Системные настройки — через /settings/gnss, а не /settings/system: это
+      //   тот же объект system, но gps в нём — ФАКТИЧЕСКОЕ наличие модуля ГНСС
+      //   (блок определяет его при старте по NMEA), а не значение из NVS. По gps
+      //   (getter gnssPresent) прячутся вариант «GPS» на странице «Датчик», значок
+      //   GPS в телеметрии, пометка GPS/IMP в «Настройках». С /settings/system на
+      //   плате без модуля gps оставался true из NVS: в legacy его при старте
+      //   переписывал init.cpp (System().gps() = is_module_gnss_), в текущей
+      //   прошивке — нет. Запись (sendSystem) — по-прежнему в /settings/system.
       if (state.pending.system.size === 0)
-        tasks.push(get('/settings/system', (system) => {
+        tasks.push(get('/settings/gnss', (system) => {
           state.system = system
           if (ToBoolean(state.system.gps) == false)
             state.odometer.sensor.gnss = false
@@ -1048,8 +1059,10 @@ const store = createStore({
     sendSystem({state}, data) {
       state.system = data
       state.system = state.system
+      // После отказа записи раздел перечитывается из /settings/system — там gps
+      // из NVS; фактическое наличие модуля ГНСС (из /settings/gnss) сохраняем.
       sendPending(state, 'system', '/settings/system',
-        (system) => { state.system = system })
+        (system) => { state.system = { ...system, gps: state.system.gps } })
     },
 
     modeWork({state}, mode) {
