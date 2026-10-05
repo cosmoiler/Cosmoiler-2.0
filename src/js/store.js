@@ -816,11 +816,6 @@ const store = createStore({
       //}
     },
 
-    requestGNSS({state}) {
-      //wsStore.set({cmd: "get", param: ["gnss"]})
-      log('requestGNSS')
-    },
-
     requestTelemetryStart({state}) {
       // Идемпотентно: новый номер цепочки гасит прежнюю (её ответ, придя
       // позже, уже не запланирует следующий запрос).

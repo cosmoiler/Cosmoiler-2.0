@@ -14,7 +14,6 @@
   @import url('../../node_modules/framework7/components/card/card.less');
   @import url('../../node_modules/framework7/components/dialog/dialog.less');
   @import url('../../node_modules/framework7/components/gauge/gauge.less');
-  @import url('../../node_modules/framework7/components/grid/grid.less');
   @import url('../../node_modules/framework7/components/input/input.less');
   @import url('../../node_modules/framework7/components/preloader/preloader.less');
   @import url('../../node_modules/framework7/components/pull-to-refresh/pull-to-refresh.less');
@@ -32,10 +31,13 @@
   // как собственный утилитарный класс — иначе карточка телеметрии и список на
   // странице «Сервис» потеряли бы тень.
   //
-  // progressbar.less как и раньше не подключён: компонент Progressbar
-  // регистрируется в framework7-custom.js, но в разметке не используется.
+  // grid.less и progressbar.less не подключены: классов .grid в разметке нет,
+  // Progressbar не используется (js/framework7-custom.js).
 
+  // ! Только iOS (решение пользователя 30.09.2026): тема задана жёстко
+  //   (components/app.svelte, theme: 'ios'), стили Material 3 не нужны —
+  //   минус ~34 КБ CSS. Вернуть MD — @includeMdTheme: true и theme: 'auto'.
   @includeIosTheme: true;
-  @includeMdTheme: true;
+  @includeMdTheme: false;
   @rtl: false
 }

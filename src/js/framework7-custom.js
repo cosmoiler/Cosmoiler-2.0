@@ -13,6 +13,9 @@
  *     package.exports и валит сборку;
  *   - `elevation` УДАЛЁН вместе с классами elevation-N;
  *   - добавлен `gauge` — на нём держатся карточки телеметрии;
+ *   - Grid и Progressbar не регистрируются (этап 3, 05.10.2026): классов .grid
+ *     в разметке нет (ряд колонок — свой .row-equal в app.less), а
+ *     f7.dialog.progress не вызывается;
  *   - из `framework7/lite` пропал экспорт `request` (в 9-й версии его нет
  *     вовсе — обмен с устройством идёт через src/js/http.js).
  *
@@ -25,10 +28,8 @@ import Accordion from 'framework7/components/accordion';
 import Card from 'framework7/components/card';
 import Dialog from 'framework7/components/dialog';
 import Gauge from 'framework7/components/gauge';
-import Grid from 'framework7/components/grid';
 import Input from 'framework7/components/input';
 import Preloader from 'framework7/components/preloader';
-import Progressbar from 'framework7/components/progressbar';
 import PullToRefresh from 'framework7/components/pull-to-refresh';
 import Radio from 'framework7/components/radio';
 import Range from 'framework7/components/range';
@@ -43,10 +44,8 @@ Framework7.use([
   Card,
   Dialog,
   Gauge,
-  Grid,
   Input,
   Preloader,
-  Progressbar,
   PullToRefresh,
   Radio,
   Range,

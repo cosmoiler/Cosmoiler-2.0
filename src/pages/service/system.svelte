@@ -3,7 +3,7 @@
     class={`page`}
     pageContent={true}
     onPageBeforeIn={pageBeforeIn}
-    onPageAfterOut={pageAfteOut} >
+    onPageAfterOut={pageAfterOut} >
 
     <Navbar title={$t('service.system.title')} />
 
@@ -254,7 +254,7 @@
       //store.dispatch('modeWork', store.state.OILER_PUMPING)
     }
 
-    function pageAfteOut() {
+    function pageAfterOut() {
       // Прокачка гаснет вместе со страницей: /state/auto ниже выводит блок из неё.
       clearTimeout(pumpingTimer)
       ctrlpump = false

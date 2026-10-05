@@ -102,10 +102,12 @@
               {$t('settings.pump.std.volume.block.p1')}
               </i>
           </Block>
-          {#if is_atf}
-            <Ranges {...rangeValues[0][0]} />
-          {:else if is_tad17}
-            <Ranges {...rangeValues[0][1]} />
+          <!-- Шкала одна на обе вязкости; {#key} пересоздаёт её при смене масла
+               (другой предел T), как раньше две отдельные шкалы. -->
+          {#if is_atf || is_tad17}
+            {#key Oil}
+              <Ranges {...volumeRange} />
+            {/key}
           {/if}
         {:else}
           <Block mediumInset>
@@ -113,7 +115,7 @@
               {$t('settings.pump.nonstd.block.p1')}
             </p>
           </Block>
-          {#each rangeValues[1] as rangeValue}
+          {#each timeRanges as rangeValue}
             <Ranges {...rangeValue} />
           {/each}
         {/if}
@@ -174,20 +176,14 @@
     //   самый короткий предел, лишнего масла насос не подаст.
     //   Правило общее со страницей ручного режима — js/pumpType.js.
     $: T = pumpMaxDpMs(pump && pump.type, Oil)
-    //$: if ((is_atf) && (ver.hw[0] == 'C')) T = T/2
-    //$: if ((is_tad17) && (ver.hw[0] == 'C')) T = T*2
 
-    //$: if ()
-    $: rangeValues = [
-      [{
-
+    // Объём масла штатного насоса — доля предела T, % (до maxProcentT).
+    $: volumeRange = {
         value: (tmpPump.dpms * 100 / T > maxProcentT)? maxProcentT : tmpPump.dpms * 100 / T,
-       // name_value: "%",
-        minValue: 0, //(ver.hw[0] == 'C')? 2 : 1,
+        minValue: 0,
         maxValue: 100,
         stepValue: 5,
         scale: false,
-        scaleStep: 4,
         icon: "icon-drop",
         icon2: "icon-dropfill",
         rangeChange: (e)=>{
@@ -206,33 +202,10 @@
           fToggle = checked
           sendCtrl()
         }
-      },
-      {
-/*         title: "Объем масла", */
-        value: (tmpPump.dpms * 100 / T > maxProcentT)? maxProcentT : tmpPump.dpms * 100 / T,
-       // name_value: "%",
-        minValue: 0, //(ver.hw[0] == 'C')? 2 : 1,
-        maxValue: 100,
-        stepValue: 5,
-        scale: false,
-        icon: "icon-drop",
-        icon2: "icon-dropfill",
-        rangeChange: (e)=>{
-          if (e == 0) e = 1;
-          tmpPump.dpms = T * e/100;
-          applyPump();
-        },
-        // ! Тумблер строкой НАД шкалой (подпись «Управление насосом»), а не справа.
-        toggleLabel: $t('settings.pump.control'),
-        toggle: true,
-        toggleCheck: fOnOffPump,
-        onCtrlToggle: (checked) => {
-          log(checked)
-          fToggle = checked
-          sendCtrl()
-        }
-      },],
-      [{
+    }
+
+    // Дополнительный насос: время включения и паузы, мс.
+    $: timeRanges = [{
         title: $t('settings.pump.time.on'),
         value: tmpPump.dpms,
         name_value: $t('ms'),
@@ -240,10 +213,6 @@
         maxValue: 5000,
         stepValue: 50,
         scale: true,
-/*         scaleStep: 6,
-        sacaleSubSteps: 2, */
-/*         icon: "icon-drop",
-        icon2: "icon-dropfill", */
         rangeChange: (e)=>{
           if (e == 0) e = 10;
           tmpPump.dpms = e;
@@ -264,20 +233,16 @@
         title: $t('settings.pump.time.off'),
         value: tmpPump.dpdp,
         name_value: $t('ms'),
-       // name_value: "%",
         minValue: 0,
         maxValue: 1000,
         stepValue: 50,
         scale: true,
-/*         icon: "icon-drop",
-        icon2: "icon-dropfill", */
         rangeChange: (e)=>{
           if (e == 0) e = 10;
           tmpPump.dpdp = e;
           applyPump();
         },
-      }],
-    ]
+      }]
 
     // ! Команда насоса — только из обработчиков (тумблер, шкалы, тип насоса), не
     //   из `$:`. Раньше реактивный ctrlPump уходил при каждом открытии страницы и
@@ -299,16 +264,6 @@
       /* включить режим настройки вязкости */
       store.dispatch('modeWork', store.state.OILER_VISCOSITY)
       Oil = localStorage.getItem('oil')
-/*       if (Oil == typesOil.ATF) {
-        is_atf = true;
-        is_tad17 = false;
-      }
-      if (Oil == typesOil.TAD) {
-        is_atf = false;
-        is_tad17 = true;
-      } */
-      //log('[TmpPump = ]', pump.period)
-      //tmpPump = pump
     }
 
     function pageAfterOut() {

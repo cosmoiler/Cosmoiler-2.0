@@ -1,5 +1,4 @@
 {#if title != undefined}
-<!-- <div transition:fade="{{delay: 100, duration: 200}}"> -->
 <Card class='elevation-3' >
     <CardHeader class={`card-header-tele`} >
       <span>{title}</span>
@@ -8,7 +7,7 @@
     <CardContent padding={true}>
       <!--
         ! Градиент дуги приборов — как у шкалы остатка масла (oil-level.svelte):
-        ! слева (0) --f7-theme-color-change-text с прозрачностью 0.35, справа
+        ! слева (0) --f7-theme-color-change-text с прозрачностью 0.80, справа
         ! (100 %) #5e3e29 без прозрачности. Цвет и прозрачность концов —
         ! stop-color / stop-opacity у <stop offset="0"> и <stop offset="1">.
         ! Gauge рисует дугу целиком и прячет
@@ -27,24 +26,9 @@
       </svg>
 
       <div class="row-equal">
-<!--         {#each gauge as {value, valueText, labelText, text}}
-            <div class="text-align-center">
-                <Gauge
-                    type="semicircle"
-                    value={value}
-                    valueText={valueText}
-                    valueFontSize="34"
-                    valueTextColor=var(--f7-theme-color-subtitle-text)
-                    borderColor=var(--f7-theme-color)
-                    labelText={labelText}
-                    labelFontSize = "18"
-                    labelTextColor=var(--f7-theme-color-change-text) />
-                <span style="color: #888888" >{text}</span>
-            </div>
-        {/each} -->
         {#each gauge as {value, valueText, labelText, text, units}}
         <div class="text-align-center">
-            <span style="color: #888888" >{text}</span>
+            <span class="tele-card__caption">{text}</span>
             <Gauge
                 type="semicircle"
                 value={value}
@@ -55,7 +39,7 @@
                 labelText={labelText}
                 labelFontSize = "18"
                 labelTextColor=var(--f7-theme-color-change-text) />
-            <span style="color: #888888" >{units}</span>
+            <span class="tele-card__caption">{units}</span>
         </div>
         {/each}
       </div>
@@ -79,7 +63,6 @@
         {/each}
     </CardFooter>
 </Card>
-<!-- </div> -->
 {/if}
 
 <script>
@@ -105,10 +88,5 @@
         return ''
     }
 
-/*     let visbl = true
-
-    setInterval(() => {
-      visbl = !visbl
-    }, 1000) */
 
 </script>

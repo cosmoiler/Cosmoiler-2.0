@@ -2,7 +2,7 @@
   name="wifi"
   class={`page`}
   pageContent={true}
-  onPageAfterOut={pageAfteOut}>
+  onPageAfterOut={pageAfterOut}>
 
   <Navbar title={$t('service.wifi.title')} />
 
@@ -44,24 +44,6 @@
     </List>
   </div>
 
-  {#if false}
-  <BlockTitle><span>{$t('service.wifi.sta.title')}</span></BlockTitle>
-  <List>
-    {#snippet staSsidLabel()}<div class="list-input__label list-input__label-text_color">SSID</div>{/snippet}
-    <ListInput class={`settings-main__list-item`}
-      type="text"
-      placeholder="Введите имя"
-      bind:value={system.sta.ssid}
-      label={staSsidLabel}
-    />
-    {#snippet staPswLabel()}<div class="list-input__label list-input__label-text_color">Пароль</div>{/snippet}
-    <ListInput class={`settings-main__list-item`}
-      type="password"
-      placeholder="Введите пароль"
-      bind:value={system.sta.psw}
-      label={staPswLabel} />
-  </List>
-  {/if}
 </Page>
 
 <script>
@@ -86,7 +68,7 @@
     //   без связи — надпись «Нет связи», как раньше; после восстановления вкладки
     //   возвращаются к началу и настройки перечитываются (store.js onLinkUp).
 
-    function pageAfteOut() {
+    function pageAfterOut() {
       pending.system.set("ap", system.ap)
       store.dispatch('sendSystem', system)
     }

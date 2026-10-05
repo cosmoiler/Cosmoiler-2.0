@@ -126,9 +126,6 @@
   background-color: var( --f7-theme-color-bg-color)
 }
 
-.margin-top__10px {
-  margin-top: 10px;
-}
 .margin-top__20px {
   margin-top: 20px;
 }
@@ -181,20 +178,12 @@
 .home-list-item__text_margin-03rem {
   margin-top: 0.3rem;
 }
-.home-list-item__badge_color {
-  background:#997760e7;
-}
 .home-media__icon2 {
   margin-right: 0.4rem;
   //color: #942f00;
   //font-weight: 800;
   transform-origin: 50% 80%;
   transform: rotate(-55deg);
-}
-.home-media__text-icon2{
-  font-size: 10px;
-  background:#9b4811d3;
-  //font-weight: bold;
 }
 /*   .list-item{
   font-weight: normal;
@@ -747,10 +736,6 @@
   font-weight: 600;
 }
 
-.block-header_text {
-  color: var(--f7-card-header-text-color);
-  font-size: var(--f7-card-header-font-size);
-}
 
 /*
  * ! Нет связи с блоком — красный навбар с надписью вместо заголовка (просьба
@@ -766,8 +751,7 @@
 :root.link-down {
   --f7-navbar-bg-color: var(--state-bad-color);
 }
-.ios.link-down .navbar-bg::after,
-.md.link-down .navbar-bg {
+.ios.link-down .navbar-bg::after {
   background-color: var(--state-bad-color);
 }
 // ! Заголовок не заменяется, а только становится невидимым: в iOS-теме F7
@@ -800,12 +784,6 @@
   pointer-events: none;
 }
 
-.nav-title-noconnection__text {
-  color: rgb(248, 66, 66);
-  font-size: 18px;
-  font-weight: 700;
-  margin-right: 0.5rem;
-}
 
 .block-title-text_settings {
   font-size: 18px;
@@ -864,35 +842,10 @@
   width: 100%;
 }
 
-/* ! Высота контейнера шкалы — только там, где есть ПОДПИСИ (класс ставит
- * components/range-param.svelte по пропу scale).
- *
- * В MD-теме (Material 3) ползунок — «столбик» 16x44px
- * (--f7-range-knob-width/height), а контейнер .range-slider по умолчанию
- * ВСЕГО 20px (--f7-range-size). При этом шкала с подписями позиционируется
- * строго от дорожки (range.less: .range-scale { top: 50%;
- * margin-top: calc(var(--f7-range-bar-size) / 2) }), то есть сразу под ней.
- * В сумме ползунок выступал ниже дорожки на 12px и перекрывал подписи.
- *
- * 66px = 44 (ползунок) + 16 (запас под подписи) + 6 (запас снизу). Значение
- * подобрано по замеру: дорожка встаёт на 25..41, ползунок на 11..55, подписи
- * начинаются с 57 — перекрытия нет (проверено: зазор 2px).
- * У шкал без подписей высота НЕ меняется — иначе строки росли бы без причины.
- *
- * ! Селектор ограничен .md: это компенсация ТОЛЬКО Material 3. В iOS-теме
- * геометрия иная и перекрытия нет: контейнер 28px, ползунок 38x24
- * (range-vars.less) — он целиком укладывается в контейнер. Применение 66px
- * к iOS раздуло бы строку без всякой причины. */
-.md .item-cell--scale .range-slider {
-  --f7-range-size: 66px;
-}
-
-/* Опустить подписи шкалы ниже ползунка: к штатному смещению (половина дорожки)
- * добавляем 16px. Без этого подписи попадали под ползунок.
- * ! Тоже только для Material 3 — см. комментарий выше. */
-.md .item-cell--scale .range-scale {
-  margin-top: calc(var(--f7-range-bar-size) / 2 + 16px);
-}
+/* Высота контейнера шкалы с подписями (.item-cell--scale) отдельно не
+ * правится: в iOS-теме контейнер 28px, ползунок 38x24 — подписи под ним не
+ * перекрываются. Компенсация для Material 3 (66px и сдвиг подписей) убрана
+ * вместе с MD-темой (этап 3, 05.10.2026). */
 
 /* ! Сетка F7 9 переписана на CSS Grid (.grid / .grid-cols-N), а прежние
  * flex-классы .row/.col вместе с Svelte-компонентами Row/Col удалены.
@@ -1050,4 +1003,10 @@
   width: 0;
   height: 0;
   overflow: hidden;
+}
+
+/* Подписи в содержимом карточки режима (tele-card.svelte: «Скорость», «км/ч») —
+ * серым; тот же цвет у подписей E/F шкалы масла (.oil-level__label). */
+.tele-card__caption {
+  color: #888888;
 }
