@@ -141,6 +141,7 @@
     "service.update.cnfg.button.title": "Установить",
     "service.update.cnfg.confirm.text": "Все текущие настройки будут заменены заводскими. Вы уверены?",
     "service.update.cnfg.confirm.error": "Ошибка сброса настроек. Повторите попытку.",
+    "service.update.cnfg.done": "Заводские настройки установлены",
     "service.update.file.title": "Выберите файл...",
 
     "service.diag.title": "Диагностика",

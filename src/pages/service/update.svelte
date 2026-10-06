@@ -43,8 +43,7 @@
     } from 'framework7-svelte';
     import {t} from '../../services/i18n.js';
     import { f7 } from 'framework7-svelte';
-    import { request } from '../../js/http.js';
-    import { deviceUrl } from '../../js/store.js';
+    import store, { deviceUrl } from '../../js/store.js';
     import log from '../../js/debug.js';
 
     let connected = useStore('connected', (value) => connected = value);
@@ -83,23 +82,20 @@
       xhr.send(files[0]);
     }
 
+    // ! Сброс — store.js resetConfig: ответ блока приходит после записи в NVS и
+    //   проверяется ({"status":false} — не записано; раньше ответ не проверялся),
+    //   после успеха настройки перечитываются — на экране заводские значения.
     function clickReset() {
-      //logger("Button")
       f7.dialog.confirm($t('service.update.cnfg.confirm.text'), "Cosmoiler",
-        () => {
-          //store.dispatch('cmdReset')
+        async () => {
           f7.preloader.show();
-          request(deviceUrl('/reset/cnfg'))
-          .then((res) => {
-              f7.preloader.hide()
-              log('/reset/cnfg', res.data)
-          })
-          .catch((err) => {
-            log(err)
-            // Без hide() индикатор ожидания оставался поверх страницы навсегда.
-            f7.preloader.hide()
+          const ok = await store.dispatch('resetConfig')
+          // Без hide() индикатор ожидания оставался бы поверх страницы.
+          f7.preloader.hide()
+          if (ok)
+            f7.toast.show({ text: $t('service.update.cnfg.done'), closeTimeout: 2000, position: 'center' })
+          else
             f7.dialog.alert($t('service.update.cnfg.confirm.error'), "Cosmoiler")
-          })
         })
     }
 

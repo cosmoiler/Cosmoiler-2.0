@@ -423,6 +423,14 @@ function deferSend(key, fn, delay = 2000) {
   sendTimers[key] = setTimeout(fn, delay);
 }
 
+/** Отменить все отложенные отправки (сброс к заводским — resetConfig). */
+function cancelDeferredSends() {
+  Object.keys(sendTimers).forEach((key) => {
+    clearTimeout(sendTimers[key]);
+    delete sendTimers[key];
+  });
+}
+
 /**
  * ! Не больше limit запросов к блоку одновременно.
  *
@@ -1014,6 +1022,32 @@ const store = createStore({
       deferSend(section, () => sendPending(state, section,
         timer ? '/settings/time' : '/settings/trip',
         timer ? (t) => applyTimer(state, t) : (o) => { state.odometer = o }), 300)
+    },
+
+    /**
+     * Сброс к заводским установкам: GET /reset/cnfg (firmware docs/config.md).
+     * Прошивка отвечает ПОСЛЕ записи в NVS: {"status":true} — записано,
+     * {"status":false} — нет (с 07.10.2026; раньше ответ уходил сразу).
+     *
+     * ! До запроса отменяются отложенные отправки и очищаются очереди
+     *   неотправленных правок (state.pending): иначе через 2 с прежние значения
+     *   ушли бы на блок поверх сброса. После успеха настройки перечитываются
+     *   (loadSettings) — на экране заводские значения, и страницы с сохранением
+     *   при уходе (например «Датчик») не запишут старые обратно.
+     * @returns {Promise<boolean>} true — сброс записан.
+     */
+    async resetConfig({state}) {
+      cancelDeferredSends();
+      Object.values(state.pending).forEach((queue) => queue.clear());
+      let ok = false;
+      try {
+        ok = statusOk(await deviceRequest('/reset/cnfg'));
+      } catch (err) {
+        ok = false;
+      }
+      log('resetConfig: %s', ok);
+      if (ok) await store.dispatch('loadSettings');
+      return ok;
     },
 
     /**

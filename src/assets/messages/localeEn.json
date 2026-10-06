@@ -136,6 +136,7 @@
     "service.update.cnfg.button.title": "Reset",
     "service.update.cnfg.confirm.text": "All current settings will be reset to factory settings. Are you sure?",
     "service.update.cnfg.confirm.error": "Error resetting settings. Try again.",
+    "service.update.cnfg.done": "Factory settings restored",
     "service.update.file.title": "Select file...",
 "service.diag.title": "Diagnostics",
     "service.diag.acord.title1": "Possible malfunctions",
