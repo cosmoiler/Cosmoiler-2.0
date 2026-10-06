@@ -93,6 +93,7 @@
     "settings.sensor.gnss": "GPS",
     "settings.sensor.impulse": "Impulse",
     "settings.sensor.imprev": "Imp. per rev.:",
+    "settings.sensor.imprev.calib": "Turn the wheel exactly one revolution — the pulse count fills in by itself",
     "settings.sensor.wheel.rimdia": "Rim diameter",
     "settings.sensor.wheel.width": "Tire width (mm)",
     "settings.sensor.wheel.height": "Tire height (%)",

@@ -63,6 +63,8 @@
         bind:value={tmpOdometer.sensor.imp}
         clearButton
         onInputClear={clearImp}
+        onInput={stopCalibration}
+        info={calibrating ? $t('settings.sensor.imprev.calib') : undefined}
         class={`sensor__list-item`}>
         </ListInput>
 <!-- Ширина -->
@@ -132,7 +134,6 @@
     let telemetry = useStore('telemetry', (value) => telemetry = value);
     let pending = useStore('pending', (value) => pending = value);
 
-    let interval
     let tmpOdometer = odometer
 
     /*
@@ -153,16 +154,53 @@
     // Копия — тот же объект стора; после перечитывания настроек — новый объект.
     $: tmpOdometer = odometer
 
+    /*
+     * ! Калибровка «крестиком» (задача пользователя 05.10.2026, firmware
+     *   docs/web-frontend.md §15): крестик → поле 0 → пользователь проворачивает
+     *   колесо на один оборот → в поле число импульсов датчика за этот оборот.
+     *
+     *   Блок отдаёт в /telemetry/get накопительный счётчик импульсов на входе
+     *   SPEED_IN — params[0].cnt (с включения, при любом выбранном датчике).
+     *   Первое значение после крестика — база, в поле — cnt − база. Телеметрия
+     *   на этой странице опрашивается тем же опросом, что и на вкладке
+     *   «Телеметрия» (store.js requestTelemetryStart). Смазчик на время замера —
+     *   на паузе (/state/ctrl). Замер заканчивается уходом со страницы (решение
+     *   пользователя 07.10) или ручным вводом числа; pageAfterOut сохраняет его.
+     *
+     *   Раньше: раз в 1,5 с в поле писался params[0].sp — но телеметрию здесь
+     *   никто не опрашивал, а sp у прошивки — импульсы за последние 500 мс.
+     *   Прошивка без cnt — поле просто остаётся 0 (ввод вручную).
+     */
+    let calibrating = false
+    let calibStart = null   // объект телеметрии на момент крестика (устаревший)
+    let calibBase = null    // cnt первой свежей телеметрии после крестика
+
     function clearImp() {
         tmpOdometer.sensor.imp = 0
+        calibStart = telemetry
+        calibBase = null
+        calibrating = true
         store.dispatch('modeWork', store.state.OILER_VISCOSITY)
-        //store.dispatch('requestTelemetryStart')
-        interval = setInterval(() => {
-            //store.dispatch('requestTelemetry')
-            tmpOdometer.sensor.imp = telemetry.params[0].sp
-            //trip = trip
-            log('clearImp ', tmpOdometer)
-        }, 1500);
+        store.dispatch('requestTelemetryStart')
+    }
+
+    function stopCalibration() {
+        if (!calibrating) return
+        calibrating = false
+        store.dispatch('requestTelemetryStop')
+    }
+
+    // Каждый ответ /telemetry/get — новый объект стора; ответ, бывший в сторе до
+    // крестика, пропускается (иначе база взялась бы из старых данных).
+    $: if (calibrating && telemetry !== calibStart) {
+        const cnt = telemetry && telemetry.params && telemetry.params[0]
+            ? telemetry.params[0].cnt : undefined
+        if (typeof cnt === 'number') {
+            if (calibBase === null) calibBase = cnt
+            // Беззнаковая разность: счётчик uint32 может переполниться.
+            tmpOdometer.sensor.imp = (cnt - calibBase) >>> 0
+            log('калибровка: cnt %d, база %d', cnt, calibBase)
+        }
     }
 
     /**
@@ -176,8 +214,7 @@
      */
     function pageAfterOut () {
         log('pageAfterOut', tmpOdometer);
-        clearInterval(interval)
-        interval = 0
+        stopCalibration()
         store.dispatch('modeWork', store.state.OILER_AUTO)
         if (tmpOdometer.sensor.imp == 0) tmpOdometer.sensor.imp = 16
         pending.trip.set("sensor", tmpOdometer.sensor)

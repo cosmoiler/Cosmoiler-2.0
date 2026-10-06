@@ -94,6 +94,7 @@
     "settings.sensor.gnss": "GPS",
     "settings.sensor.impulse": "Импульсный",
     "settings.sensor.imprev": "Количество импульсов на оборот колеса",
+    "settings.sensor.imprev.calib": "Проверните колесо ровно на один оборот — число импульсов заполнится само",
     "settings.sensor.wheel.rimdia": "Диаметр колеса",
     "settings.sensor.wheel.width": "Ширина шины",
     "settings.sensor.wheel.height": "Высота шины",
