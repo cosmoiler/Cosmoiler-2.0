@@ -55,15 +55,23 @@
     <div class="section-card">
         <BlockTitle>{$t('settings.sensor.imp.settings')}</BlockTitle>
         <List noHairlinesMd >
+<!--
+      ! Значения полей — value={…} + колбэк, а не bind:value: у ListInput
+      ! Framework7 9 value объявлен без $bindable, и bind:value передаёт значение
+      ! только вниз (firmware docs/web-frontend.md §6, таблица ловушек F7 9).
+      ! Набранное руками число оставалось внутри поля, а при уходе со страницы
+      ! сохранялось прежнее — 16 или результат замера (замечание пользователя
+      ! 08.10.2026). Поле отдаёт строку — в состояние кладётся число (toNumber).
+    -->
 <!-- Импульсов на оборот -->
         <ListInput
         label={$t('settings.sensor.imprev')}
         type="number"
         required
-        bind:value={tmpOdometer.sensor.imp}
+        value={tmpOdometer.sensor.imp}
         clearButton
         onInputClear={clearImp}
-        onInput={stopCalibration}
+        onInput={onImpInput}
         info={calibrating ? $t('settings.sensor.imprev.calib') : undefined}
         class={`sensor__list-item`}>
         </ListInput>
@@ -75,7 +83,12 @@
         required
         clearButton
         validate
-        bind:value={tmpOdometer.wheel.w}
+        value={tmpOdometer.wheel.w}
+        onInput={(e) => {
+            // Пусто или 0 — ширину не меняем: поле обязательное.
+            const w = toNumber(e.target.value)
+            if (w > 0) tmpOdometer.wheel.w = w
+        }}
         onChange={() =>{
             if (!tmpOdometer.sensor.gnss) pending.trip.set("wheel", tmpOdometer.wheel)
             store.dispatch('sendDistance', tmpOdometer)
@@ -86,8 +99,9 @@
         <ListInput
         label={$t('settings.sensor.wheel.height')}
         type="select"
-        bind:value={tmpOdometer.wheel.h}
-        onChange={() => {
+        value={tmpOdometer.wheel.h}
+        onChange={(e) => {
+            tmpOdometer.wheel.h = toNumber(e.target.value)
             if (!tmpOdometer.sensor.gnss) pending.trip.set("wheel", tmpOdometer.wheel)
             store.dispatch('sendDistance', tmpOdometer)
         }}
@@ -100,7 +114,8 @@
         <ListInput
         label={$t('settings.sensor.wheel.rimdia')}
         type="select"
-        bind:value={tmpOdometer.wheel.d}
+        value={tmpOdometer.wheel.d}
+        onChange={(e) => { tmpOdometer.wheel.d = toNumber(e.target.value) }}
         class={`sensor__list-item`}>
             {#each dia as value}
             <option value={value}>{`${value}"`}</option>
@@ -165,7 +180,8 @@
      *   на этой странице опрашивается тем же опросом, что и на вкладке
      *   «Телеметрия» (store.js requestTelemetryStart). Смазчик на время замера —
      *   на паузе (/state/ctrl). Замер заканчивается уходом со страницы (решение
-     *   пользователя 07.10) или ручным вводом числа; pageAfterOut сохраняет его.
+     *   пользователя 07.10) или ручным вводом числа (onImpInput); pageAfterOut
+     *   сохраняет то, что в поле, — замер или набранное руками.
      *
      *   Раньше: раз в 1,5 с в поле писался params[0].sp — но телеметрию здесь
      *   никто не опрашивал, а sp у прошивки — импульсы за последние 500 мс.
@@ -188,6 +204,25 @@
         if (!calibrating) return
         calibrating = false
         store.dispatch('requestTelemetryStop')
+    }
+
+    // Число из поля ввода: DOM отдаёт строку, а прошивка ждёт в JSON число —
+    // строку («"imp":"48"») она не примет и оставит прежнее значение. Пусто или
+    // не число — 0.
+    function toNumber(text) {
+        const v = parseInt(text, 10)
+        return Number.isFinite(v) && v > 0 ? v : 0
+    }
+
+    // Ручной ввод числа импульсов: замер «крестиком» заканчивается, в поле —
+    // набранное число. Стёртое поле остаётся пустым (0 в нём мешал бы набирать
+    // новое число), при уходе со страницы пустое станет 16 — как замер без
+    // импульсов (решение пользователя 07.10). Крестик тоже даёт событие ввода
+    // (пустое), а сразу за ним — onInputClear, который начинает новый замер.
+    function onImpInput(e) {
+        stopCalibration()
+        const text = e.target.value
+        tmpOdometer.sensor.imp = text === '' ? '' : toNumber(text)
     }
 
     // Каждый ответ /telemetry/get — новый объект стора; ответ, бывший в сторе до
@@ -216,7 +251,10 @@
         log('pageAfterOut', tmpOdometer);
         stopCalibration()
         store.dispatch('modeWork', store.state.OILER_AUTO)
-        if (tmpOdometer.sensor.imp == 0) tmpOdometer.sensor.imp = 16
+        // 0 (замер без импульсов) или пустое поле — заводское 16; дальше в JSON
+        // уходит число (calcDistance для импульсного датчика тоже переводит в Number).
+        if (!(Number(tmpOdometer.sensor.imp) > 0)) tmpOdometer.sensor.imp = 16
+        else tmpOdometer.sensor.imp = Number(tmpOdometer.sensor.imp)
         pending.trip.set("sensor", tmpOdometer.sensor)
         if (fIMP) {
             store.dispatch('calcDistance', tmpOdometer)

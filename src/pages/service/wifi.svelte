@@ -20,10 +20,18 @@
     <BlockTitle><span>{$t('service.wifi.ap.title')}</span></BlockTitle>
     <List>
       {#snippet ssidLabel()}<div class="list-input__label list-input__label-text_color">SSID</div>{/snippet}
+      <!--
+        ! value/checked + колбэк, а не bind: — у ListInput и Toggle Framework7 9
+        ! value/checked объявлены без $bindable, и bind: передаёт значение только
+        ! вниз (firmware docs/web-frontend.md §6, таблица ловушек F7 9): правки имени,
+        ! пароля и «Всегда включено» до system не доходили и при уходе со страницы
+        ! не сохранялись (найдено 08.10.2026 вместе с полем импульсов датчика).
+      -->
       <ListInput
         type="text"
         placeholder={$t('service.wifi.ap.ssid.plchldr')}
-        bind:value={system.ap.ssid}
+        value={system.ap.ssid}
+        onInput={(e) => { system.ap.ssid = e.target.value }}
         label={ssidLabel}
         clearButton
       />
@@ -31,12 +39,13 @@
       <ListInput
         type="password"
         placeholder={$t('service.wifi.ap.psw.plchldr')}
-        bind:value={system.ap.psw}
+        value={system.ap.psw}
+        onInput={(e) => { system.ap.psw = e.target.value }}
         label={pswLabel}
         clearButton
       />
       {#snippet alwTitle()}<div class="list-input__label list-input__label-text_color">{$t('service.wifi.ap.alwson.title')}</div>{/snippet}
-      {#snippet alwAfter()}<Toggle bind:checked={system.ap.pwr} />{/snippet}
+      {#snippet alwAfter()}<Toggle checked={system.ap.pwr} onToggleChange={(checked) => { system.ap.pwr = checked }} />{/snippet}
       <ListItem class={`row-tint`}
         title={alwTitle}
         after={alwAfter}
